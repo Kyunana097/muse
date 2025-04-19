@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.0.0   MAIN                                                              04/14/2025 11:34:38 PAGE 1   
+C51 COMPILER V9.60.0.0   MAIN                                                              04/18/2025 10:40:13 PAGE 1   
 
 
 C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MAIN
@@ -9,22 +9,126 @@ COMPILER INVOKED BY: D:\keil\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE DEB
 line level    source
 
    1          #include <REGX52.H>
-   2          
-   3          void main()
-   4          {
-   5   1          while(1);
-   6   1      }
+   2          #include "Headers/LCD1602.h"
+   3          #include "Headers/bmp.h"
+   4          #include "Headers/Delay.h"
+   5          #include "Headers/oled.h"
+   6          #include "Headers/oledfont.h"
+   7          #include "Headers/RTX51TNY.H"
+   8          extern void init_system(void);
+   9          
+  10          sbit KEY1 = P3_1;
+*** ERROR C146 IN LINE 10 OF main.c: 'P3_1': invalid base address
+  11          sbit KEY2 = P3_0;
+*** ERROR C146 IN LINE 11 OF main.c: 'P3_0': invalid base address
+  12          sbit KEY3 = P3_2;
+*** ERROR C146 IN LINE 12 OF main.c: 'P3_2': invalid base address
+  13          sbit KEY4 = P3_3;
+*** ERROR C146 IN LINE 13 OF main.c: 'P3_3': invalid base address
+  14          
+  15          // 游戏状态变量
+  16          unsigned char game_state = 0;   // 0: 主菜单，1: 游戏进行中
+  17          unsigned char board_num = 0;    // 0: 
+  18          
+  19          //初始化
+  20          void task_init(void) _task_ 0
+  21          {
+  22   1          OLED_Init();
+  23   1          LCD_Init();
+  24   1      
+  25   1          // 创建任务
+  26   1          os_create_task(1);      // 启动按键任务
+  27   1          os_create_task(2);      // 启动菜单任务
+  28   1          os_create_task(3);      // 启动游戏任务
+  29   1          os_create_task(4);      // 启动积分任务
+  30   1      
+  31   1          // 自删除任务0
+  32   1          os_delete_task(0);
+  33   1      }
+  34          
+  35          /**
+  36           * 菜单按键检测
+  37           */
+  38          void task_key(void) _task_ 1
+  39          {
+  40   1          bit key1_pressed = 0; // 按钮1状态标志
+  41   1          bit key2_pressed = 0; // 按钮2状态标志
+  42   1          bit key3_pressed = 0; // 按钮3状态标志
+  43   1          bit key4_pressed = 0; // 按钮4状态标志
+  44   1          
+  45   1          /*主菜单中
+  46   1          * key1 = up
+  47   1          * key2 = down
+  48   1          * key3 = forward
+  49   1          * key4 = back
+  50   1          */
+C51 COMPILER V9.60.0.0   MAIN                                                              04/18/2025 10:40:13 PAGE 2   
 
+  51   1          if (game_state == 0)
+  52   1          {
+  53   2              if (!key1_pressed)
+  54   2              {
+  55   3                  os_wait(K_IVL, 10, 0); // 消抖
+  56   3              }
+  57   2          }
+  58   1          /*游戏中
+  59   1          * key1, key2 = sky
+  60   1          * key3, key4 = ground
+  61   1          */
+  62   1          if (game_state == 1)
+  63   1          {
+  64   2      
+  65   2          }
+  66   1      }
+  67          
+  68          /**
+  69           * 菜单
+  70           */
+  71          void task_board(void) _task_ 2
+  72          {
+  73   1          //显示图片
+  74   1          OLED_DrawBMP(0, 0, 128, 8, BMP1);   //图片显示
+  75   1          os_wait(K_IVL, 100, 0);             //等待1000ms
+  76   1      
+  77   1          //显示可选项
+  78   1          OLED_ShowString(2, 0, "Start", 16);
+  79   1          OLED_ShowString(2, 3, "Setting", 16);
+  80   1          OLED_ShowString(2, 6, "Score", 16);
+  81   1      
+  82   1      }
+  83          
+  84          /**
+  85           * 游戏界面
+  86           */
+  87          void task_game(void) _task_ 3
+  88          {
+  89   1      
+  90   1      }
+  91          
+  92          /*
+  93          * 计分系统
+  94          */
+  95          void task_score(void) _task_ 4
+  96          {
+  97   1      
+  98   1      }
+  99          
+ 100          /*******************************
+ 101            主函数 - 硬件初始化与任务启动
+ 102          *******************************/
+ 103          void init_system(void)
+ 104          {
+ 105   1      
+ 106   1      
+ 107   1          // 创建任务（RTX51自动启动任务0）
+ 108   1          os_create_task(1);      // 启动按键任务
+ 109   1          os_create_task(2);      // 启动OLED任务
+ 110   1          os_create_task(3);      // 启动菜单任务
+ 111   1          os_create_task(4);      // 启动积分任务
+ 112   1      
+C51 COMPILER V9.60.0.0   MAIN                                                              04/18/2025 10:40:13 PAGE 3   
 
-MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =      2    ----
-   CONSTANT SIZE    =   ----    ----
-   XDATA SIZE       =   ----    ----
-   PDATA SIZE       =   ----    ----
-   DATA SIZE        =   ----    ----
-   IDATA SIZE       =   ----    ----
-   BIT SIZE         =   ----    ----
-END OF MODULE INFORMATION.
+ 113   1          os_delete_task(0);    // 删除初始任务
+ 114   1      }
 
-
-C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
+C51 COMPILATION COMPLETE.  0 WARNING(S),  4 ERROR(S)
