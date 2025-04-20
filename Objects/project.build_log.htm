@@ -63,9 +63,21 @@ linking...
     SEGMENT: ?PR?_OLED_SHOWCHAR?OLED
     CALLER1: ?PR?TASK_GAME?MAIN
     CALLER2: ?PR?TASK_SCORE?MAIN
-Program Size: data=94.1 xdata=0 code=6013
+*** WARNING L15: MULTIPLE CALL TO SEGMENT
+    SEGMENT: ?PR?OLED_CLEAR?OLED
+    CALLER1: ?PR?TASK_SCORE?MAIN
+    CALLER2: ?PR?TASK_SETTING?MAIN
+*** WARNING L15: MULTIPLE CALL TO SEGMENT
+    SEGMENT: ?PR?_OLED_SHOWSTRING?OLED
+    CALLER1: ?PR?TASK_SCORE?MAIN
+    CALLER2: ?PR?TASK_SETTING?MAIN
+*** WARNING L15: MULTIPLE CALL TO SEGMENT
+    SEGMENT: ?PR?_OLED_SHOWCHAR?OLED
+    CALLER1: ?PR?TASK_SCORE?MAIN
+    CALLER2: ?PR?TASK_SETTING?MAIN
+Program Size: data=109.1 xdata=0 code=6122
 creating hex file from ".\Objects\project"...
-".\Objects\project" - 0 Error(s), 13 Warning(s).
+".\Objects\project" - 0 Error(s), 16 Warning(s).
 Build Time Elapsed:  00:00:01
 </pre>
 </body>
