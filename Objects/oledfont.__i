@@ -1,1 +1,0 @@
-"sources\oledfont.c" OPTIMIZE (8,SPEED) BROWSE INCDIR(.\Headers;.\sources) DEBUG OBJECTEXTEND PRINT(.\Listings\oledfont.lst) OBJECT(.\Objects\oledfont.obj)

@@ -4,17 +4,16 @@
 #include "Headers/oledfont.h"
 #include "Headers/RTX51TNY.H>
 
-// 修复1：删除重复声明
 sbit KEY1 = P3 ^ 1;
 sbit KEY2 = P3 ^ 0;
 sbit KEY3 = P3 ^ 2;
 sbit KEY4 = P3 ^ 3;
 
 // 游戏状态变量
-volatile unsigned char game_state = 0;    // 使用volatile
-volatile unsigned char setting_state = 0;
-volatile unsigned char score_state = 0;
-volatile unsigned char board_num = 0;
+volatile unsigned char game_state = 0;          // 0: 主菜单，1: 游戏进行中
+volatile unsigned char setting_state = 0;       // 0: 主菜单，1: 设置界面
+volatile unsigned char score_state = 0;         // 0: 主菜单，1: 最高分界面
+volatile unsigned char board_num = 0;           // 0: start 1: setting 2: score
 
 // 初始化任务
 void task_init(void) _task_ 0
@@ -36,65 +35,82 @@ void task_init(void) _task_ 0
 // 按键任务
 void task_key(void) _task_ 1
 {
-    unsigned char key1_pressed = 0;
-    unsigned char key2_pressed = 0;
-    unsigned char key3_pressed = 0;
-    unsigned char key4_pressed = 0;
-
-    while (1)
+    while(1)
     {
-        // 修复3：修正拼写错误
-        if (!KEY1 && !key1_pressed)
+        /*主菜单中
+        * key1 = up
+        * key2 = down
+        * key3 = comfirm
+        */
+        if (game_state == 0)
         {
-            os_wait(K_IVL, 20, 0); // 消抖
-            if (!KEY1)
+            if (KEY1 == 0)
             {
-                os_disable_isr();
-                board_num = (board_num == 0) ? 2 : board_num - 1;
-                key1_pressed = 1;
-                os_enable_isr();
+                os_wait(K_IVL, 3, 0); // 消抖
+                if (KEY1 == 0)         //等待按键释放
+                {
+                    os_wait(K_IVL, 10, 0); // 消抖
+                    board_num--;       //向上
+                    if(board_num<0)
+                        board_num = 2; //越界循环
+                    while (KEY1 == 0) os_wait(K_IVL, 1, 0); // 等待释放
+                }
+                
             }
-        }
-        else if (KEY1)
-        {
-            key1_pressed = 0;
-        }
-
-        if (!KEY2 && !key2_pressed)
-        {
-            os_wait(K_IVL, 20, 0);
-            if (!KEY2)
+            
+            if (KEY2 == 0)
             {
-                os_disable_isr();
-                board_num = (board_num + 1) % 3;
-                key2_pressed = 1;
-                os_enable_isr();
+                os_wait(K_IVL, 10, 0); // 消抖
+                while(KEY2 == 0);         //等待按键释放
+                os_wait(K_IVL, 10, 0); // 消抖
+                board_num++;        //向下
+                if(board_num>2)
+                    board_num = 0;//越界循环
+                while (KEY2 == 0) os_wait(K_IVL, 1, 0);
             }
-        }
-        else if (KEY2)
-        {
-            key2_pressed = 0;
-        }
-
-        if (!KEY3 && !key3_pressed)
-        {
-            os_wait(K_IVL, 20, 0);
-            if (!KEY3)
+            
+            if (KEY3 == 0)
             {
-                os_disable_isr();
-                if (board_num == 0) game_state = 1;
-                if (board_num == 1) setting_state = 1;
-                if (board_num == 2) score_state = 1;
-                key3_pressed = 1;
-                os_enable_isr();
+                os_wait(K_IVL, 10, 0); // 消抖
+                while (KEY3 == 0);         //等待按键释放
+                os_wait(K_IVL, 10, 0); // 消抖
+                    if (board_num == 0)//game选项下按下确认按键
+                        game_state = 1;
+                    if (board_num == 1)//setting选项下按下确认按键
+                        setting_state = 1;
+                    if (board_num == 2)//score选项下按下确认按钮
+                        score_state = 1;
+                    while (KEY3 == 0) os_wait(K_IVL, 1, 0);
             }
+            os_wait(K_IVL, 20, 0);      //释放内存
+            
+            //主菜单下不需要按键4
         }
-        else if (KEY3)
+        /*游戏中
+        * key1, key2 = sky
+        * key3, key4 = ground
+        */
+        if (game_state == 1)
         {
-            key3_pressed = 0;
+    
         }
+        /*设置中
+        * key1 = plus
+        * key2 = less
+        * key3 = comfirm
+        * key4 = back
+        */
+        if (setting_state == 1)
+        {
 
-        os_wait(K_IVL, 50, 0);  // 50ms扫描周期
+        }
+        /*计分板中
+        * key4 = back
+        */
+        if (score_state == 1)
+        {
+
+        }
     }
 }
 
@@ -105,10 +121,33 @@ void task_board(void) _task_ 2
     OLED_Clear();
     while (1)
     {
-        OLED_ShowString(25, 0, "Start", 16);
-        OLED_ShowString(25, 3, "Setting", 16);
-        OLED_ShowString(25, 6, "Score", 16);
-        os_wait(K_IVL, 200, 0);  // 优化刷新率
+        while (game_state == 0 && score_state == 0 && setting_state == 0)
+        { 
+            OLED_ShowString(25, 0, "Start", 16);
+            OLED_ShowString(25, 3, "Setting", 16);
+            OLED_ShowString(25, 6, "Score", 16);
+            switch (board_num)
+            {
+            case 0: 
+                OLED_ShowString(3, 0, ">>", 16);
+                OLED_ShowString(3, 3, "  ", 16);
+                OLED_ShowString(3, 6, "  ", 16);
+                break;
+
+            case 1: 
+                OLED_ShowString(3, 0, "  ", 16);
+                OLED_ShowString(3, 3, ">>", 16);
+                OLED_ShowString(3, 6, "  ", 16);
+                break;
+
+            case 2: 
+                OLED_ShowString(3, 0, "  ", 16);
+                OLED_ShowString(3, 3, "  ", 16);
+                OLED_ShowString(3, 6, ">>", 16);
+                break;
+            }
+            os_wait(K_IVL, 10, 0);  // 优化刷新率
+        }
     }
 }
 
@@ -119,9 +158,13 @@ void task_game(void) _task_ 3
     {
         if (game_state == 1)
         {
+            OLED_Clear();
             P2 = 0x01;
             // 添加游戏逻辑
+            OLED_ShowString(3, 3, "gamestate now", 16); 
             os_wait(K_TMO, 30, 0);
+            OLED_Clear();
+            game_state = 0;
         }
         else
         {
@@ -137,9 +180,13 @@ void task_score(void) _task_ 4
     {
         if (score_state == 1)
         {
+            OLED_Clear();
             P2 = 0x02;
             // 添加积分显示逻辑
-            os_wait(K_TMO, 50, 0);
+            OLED_ShowString(3, 3, "scorestate now", 16); 
+            os_wait(K_TMO, 30, 0);
+            OLED_Clear();
+            score_state = 0;
         }
         else
         {
