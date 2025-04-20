@@ -24,11 +24,57 @@ Project File Date:  04/20/2025
 <h2>Output:</h2>
 Build target 'Target 1'
 compiling main.c...
-main.c(65): error C202: 'key1_perssed': undefined identifier
-main.c(77): error C202: 'key2_perssed': undefined identifier
-main.c(89): error C202: 'key3_perssed': undefined identifier
-Target not created.
-Build Time Elapsed:  00:00:00
+main.c(52): warning C206: 'os_disable_isr': missing function-prototype
+main.c(55): warning C206: 'os_enable_isr': missing function-prototype
+linking...
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_DELAY_50MS?OLED
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_DELAY_1MS?OLED
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_FILL_PICTURE?OLED
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?OLED_DISPLAY_ON?OLED
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?OLED_DISPLAY_OFF?OLED
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?OLED_ON?OLED
+*** WARNING L16: UNCALLED SEGMENT, IGNORED FOR OVERLAY PROCESS
+    SEGMENT: ?PR?_OLED_SHOWNUM?OLED
+*** WARNING L1: UNRESOLVED EXTERNAL SYMBOL
+    SYMBOL:  OS_DISABLE_ISR
+    MODULE:  .\Objects\main.obj (MAIN)
+*** WARNING L1: UNRESOLVED EXTERNAL SYMBOL
+    SYMBOL:  OS_ENABLE_ISR
+    MODULE:  .\Objects\main.obj (MAIN)
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  OS_DISABLE_ISR
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 10F5H
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  OS_ENABLE_ISR
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 110AH
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  OS_DISABLE_ISR
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 1128H
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  OS_ENABLE_ISR
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 1140H
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  OS_DISABLE_ISR
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 115EH
+*** WARNING L2: REFERENCE MADE TO UNRESOLVED EXTERNAL
+    SYMBOL:  OS_ENABLE_ISR
+    MODULE:  .\Objects\main.obj (MAIN)
+    ADDRESS: 1180H
+Program Size: data=74.1 xdata=0 code=5767
+creating hex file from ".\Objects\project"...
+".\Objects\project" - 0 Error(s), 17 Warning(s).
+Build Time Elapsed:  00:00:01
 </pre>
 </body>
 </html>
