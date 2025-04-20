@@ -10,7 +10,8 @@
 //[4]0 1 2 3 ... 127	
 //[5]0 1 2 3 ... 127	
 //[6]0 1 2 3 ... 127	
-//[7]0 1 2 3 ... 127 			  
+//[7]0 1 2 3 ... 127 
+
 
 
 /***********************Delay****************************************/
@@ -263,24 +264,6 @@ void OLED_ShowString(u8 x,u8 y,u8 *chr,u8 Char_Size)
 		if(x>120){x=0;y+=2;}
 			j++;
 	}
-}
-
-//显示汉字
-void OLED_ShowChinese(u8 x,u8 y,u8 no)
-{      			    
-	u8 t,adder=0;
-	OLED_Set_Pos(x,y);	
-    for(t=0;t<16;t++)
-		{
-				OLED_WR_Byte(Hzk[2*no][t],OLED_DATA);
-				adder+=1;
-     }	
-		OLED_Set_Pos(x,y+1);	
-    for(t=0;t<16;t++)
-			{	
-				OLED_WR_Byte(Hzk[2*no+1][t],OLED_DATA);
-				adder+=1;
-      }					
 }
 
 /***********功能描述：显示显示BMP图片128×64起始点坐标(x,y),x的范围0～127，y为页的范围0～7*****************/

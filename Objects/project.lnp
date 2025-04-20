@@ -1,3 +1,5 @@
-".\Objects\main.obj" 
-TO ".\Objects\project" 
+".\Objects\main.obj",
+".\Objects\oled.obj",
+".\Objects\oledfont.obj" 
+TO ".\Objects\project" Rtx51Tiny 
 PRINT(".\Listings\project.m51") RAMSIZE(256) 

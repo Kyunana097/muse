@@ -324,7 +324,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath></IncludePath>
+              <IncludePath>.\Headers;.\sources</IncludePath>
             </VariousControls>
           </C51>
           <Ax51>
@@ -382,14 +382,29 @@
               <FilePath>.\main.c</FilePath>
             </File>
             <File>
-              <FileName>LCD1602.c</FileName>
+              <FileName>oled.c</FileName>
               <FileType>1</FileType>
-              <FilePath>.\sources\LCD1602.c</FilePath>
+              <FilePath>.\sources\oled.c</FilePath>
             </File>
             <File>
-              <FileName>LCD1602.h</FileName>
+              <FileName>oled.h</FileName>
               <FileType>5</FileType>
-              <FilePath>.\Headers\LCD1602.h</FilePath>
+              <FilePath>.\Headers\oled.h</FilePath>
+            </File>
+            <File>
+              <FileName>oledfont.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Headers\oledfont.h</FilePath>
+            </File>
+            <File>
+              <FileName>bmp.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Headers\bmp.h</FilePath>
+            </File>
+            <File>
+              <FileName>oledfont.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\sources\oledfont.c</FilePath>
             </File>
           </Files>
         </Group>
