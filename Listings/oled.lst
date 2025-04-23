@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.0.0   OLED                                                              04/23/2025 18:24:24 PAGE 1   
+C51 COMPILER V9.60.0.0   OLED                                                              04/23/2025 23:53:58 PAGE 1   
 
 
 C51 COMPILER V9.60.0.0, COMPILATION OF MODULE OLED
@@ -62,7 +62,7 @@ line level    source
   52   1        OLED_SDIN_Clr();
   53   1        OLED_SDIN_Set();
   54   1      }
-C51 COMPILER V9.60.0.0   OLED                                                              04/23/2025 18:24:24 PAGE 2   
+C51 COMPILER V9.60.0.0   OLED                                                              04/23/2025 23:53:58 PAGE 2   
 
   55          
   56          /**********************************************
@@ -126,7 +126,7 @@ line level    source
  114   1         IIC_Stop();
  115   1      }
  116          void OLED_WR_Byte(unsigned dat,unsigned cmd)
-C51 COMPILER V9.60.0.0   OLED                                                              04/23/2025 18:24:24 PAGE 3   
+C51 COMPILER V9.60.0.0   OLED                                                              04/23/2025 23:53:58 PAGE 3   
 
  117          {
  118   1        if(cmd)             //输入0写命令(OLED_CMD) 1写数据(OLED_DATA)
@@ -190,7 +190,7 @@ line level    source
  176   2          OLED_WR_Byte (0xb0+i,OLED_CMD);    //设置页地址（0~7）
  177   2          OLED_WR_Byte (0x00,OLED_CMD);      //设置显示位置—列低地址
  178   2          OLED_WR_Byte (0x10,OLED_CMD);      //设置显示位置—列高地址   
-C51 COMPILER V9.60.0.0   OLED                                                              04/23/2025 18:24:24 PAGE 4   
+C51 COMPILER V9.60.0.0   OLED                                                              04/23/2025 23:53:58 PAGE 4   
 
  179   2          for(n=0;n<128;n++)OLED_WR_Byte(0,OLED_DATA); 
  180   2        } //更新显示
@@ -254,7 +254,7 @@ line level    source
  238          {           
  239   1        u8 t,temp;
  240   1        u8 enshow=0;               
-C51 COMPILER V9.60.0.0   OLED                                                              04/23/2025 18:24:24 PAGE 5   
+C51 COMPILER V9.60.0.0   OLED                                                              04/23/2025 23:53:58 PAGE 5   
 
  241   1        for(t=0;t<len;t++)
  242   1        {
@@ -318,7 +318,7 @@ line level    source
  298   1        OLED_WR_Byte(0xA1,OLED_CMD);//set segment remap 
  299   1        OLED_WR_Byte(0xA6,OLED_CMD);//--normal / reverse
  300   1        OLED_WR_Byte(0xA8,OLED_CMD);//--set multiplex ratio(1 to 64)
-C51 COMPILER V9.60.0.0   OLED                                                              04/23/2025 18:24:24 PAGE 6   
+C51 COMPILER V9.60.0.0   OLED                                                              04/23/2025 23:53:58 PAGE 6   
 
  301   1        OLED_WR_Byte(0x3F,OLED_CMD);//--1/32 duty
  302   1        OLED_WR_Byte(0xC8,OLED_CMD);//Com scan direction
