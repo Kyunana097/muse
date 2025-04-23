@@ -323,3 +323,24 @@ void OLED_Init(void)
 	
 	OLED_WR_Byte(0xAF,OLED_CMD);//--turn on oled panel
 }  
+
+//水平滚动
+void OLED_roll(unsigned char track, unsigned char speed)
+{
+	Write_IIC_Command(0x2D);//向右(0x2C)/向左(0x2D)滚动一列
+	Write_IIC_Command(0x00);//dummy byte(空比特、虚拟字节),暂未发现其指令作用
+	if (track == 1)
+	{
+		Write_IIC_Command(0x00);//设置滚动起始页地址
+		Write_IIC_Command(0x01);//虚拟字节(设置为0x01)
+		Write_IIC_Command(0x07);//设置滚动结束页  
+	}
+	else 
+	{
+		Write_IIC_Command(0x03);//设置滚动起始页地址
+		Write_IIC_Command(speed-1);//设置滚动速度(0x00~0x07数值越小速度越慢)
+		Write_IIC_Command(0x05);//设置滚动结束页  
+	} 
+	Write_IIC_Command(0x00);//设置起始列地址
+	Write_IIC_Command(0x7F);//设置结束列地址
+}

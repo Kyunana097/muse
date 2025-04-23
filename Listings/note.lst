@@ -1,0 +1,40 @@
+C51 COMPILER V9.60.0.0   NOTE                                                              04/23/2025 14:41:41 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE NOTE
+OBJECT MODULE PLACED IN .\Objects\note.obj
+COMPILER INVOKED BY: D:\keil\C51\BIN\C51.EXE sources\note.c OPTIMIZE(8,SPEED) BROWSE INCDIR(.\Headers;.\sources) DEBUG O
+                    -BJECTEXTEND PRINT(.\Listings\note.lst) OBJECT(.\Objects\note.obj)
+
+line level    source
+
+   1          #include "Headers/oledfont.h"
+   2          #include "Headers/note.h"
+   3          #include <REGX52.H>
+   4          #include "Headers/oled.h"
+   5          
+   6          unsigned char track_position = 0;
+   7          unsigned char speed = 4;        
+   8          
+   9          void note_spawn(track)
+  10          {
+  11   1              x_position = 0;//Òô·ûË®Æ½Î»ÖÃ 0-127
+  12   1              for (x_position = 128; x_position - speed; x_position > 0)
+  13   1              {
+  14   2                      OLED_ShowString(x_position, track, "Q", 16);
+  15   2              }
+  16   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =     36    ----
+   CONSTANT SIZE    =      2    ----
+   XDATA SIZE       =   ----    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      2       2
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
