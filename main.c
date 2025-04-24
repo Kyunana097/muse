@@ -3,6 +3,7 @@
 #include "Headers/oled.h"
 #include "Headers/oledfont.h"
 #include "Headers/RTX51TNY.H"
+#include "Headers/note.h"
 
 sbit KEY1 = P3 ^ 1;
 sbit KEY2 = P3 ^ 0;
@@ -366,10 +367,14 @@ void task_setting(void) _task_ 5
                     {
                         OLED_ShowString(3, 6, "Good   ", 16);
                     }
-                    else
+                    else if(hit_time < 3)
                     {
                         OLED_ShowString(3, 6, "Bad    ", 16);
                     }
+                    OLED_ShowString(x_position, 0, " ", 16);
+                    x_position = 121 - speed * 2;
+                    KEY4_pressed = 0;
+                    continue;
                 }
                 //移动Q（避免使用for而无法识别speed输入）
                 if (x_position > speed && x_position < 120 && KEY4_pressed == 0)
@@ -383,6 +388,8 @@ void task_setting(void) _task_ 5
                     OLED_ShowString(x_position, 0, " ", 16);
                     x_position = 121 - speed * 2;
                     KEY4_pressed = 0;
+
+                    OLED_ShowString(3, 6, "Miss   ", 16);
                 }
                 os_wait(K_IVL, 1, 0);
             }
