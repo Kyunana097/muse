@@ -3,8 +3,6 @@
 #include <REGX52.H>
 #include "Headers/oled.h"
 
-unsigned char track_position = 0;
-unsigned char speed = 4;	
 
 void note_spawn(track)
 {
