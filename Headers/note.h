@@ -1,10 +1,24 @@
 #ifndef __NOTE_H__
 #define __NOTE_H__
 
-extern unsigned char track_position;	//音符轨道位置 1-2
-extern unsigned char speed;				//音符下落速度 1-8
-extern unsigned char x_position;		//音符水平位置 0-128
+#include <REGX52.H>
+#include "OLED.h"
+#include "RTX51TNY.h"
 
-void note_spawn(track);
+/* 使用标准C51兼容的类型定义 */
+typedef unsigned char NoteHitResult;
 
-#endif // !__NOTE_H__
+/* 判定结果常量定义 */
+#define NOTE_MISS     0
+#define NOTE_PERFECT  1
+#define NOTE_GOOD     2
+#define NOTE_BAD      3
+
+/* 判定结果描述表（存储在CODE区） */
+extern code const char* HitResults[4];
+
+/* 函数声明 */
+NoteHitResult check_note_hit(unsigned char speed, unsigned char track);
+void note_spawn(unsigned char speed, unsigned char current_track);
+
+#endif

@@ -3,6 +3,7 @@
 #include "Headers/oledfont.h"
 #include "Headers/RTX51TNY.H"
 #include "Headers/music.h"
+#include "Headers/note.h"
 
 sbit KEY1 = P3 ^ 1;
 sbit KEY2 = P3 ^ 0;
@@ -16,6 +17,11 @@ bit info_state = 0;          // 0: 主菜单，1: 制作信息界面
 bit isPlaying = 0;           // 0: 没有正在游玩的游戏 1; 正在游戏中
 bit musicPlaying = 0;        // 0: 不播放 1: 播放
 
+bit key1_pressed = 0;
+bit key2_pressed = 0;
+bit key3_pressed = 0;
+bit key4_pressed = 0;
+
 volatile unsigned short track1_score = 0;
 volatile unsigned short track2_score = 0;
 volatile unsigned short temp_score = 0;
@@ -24,13 +30,8 @@ volatile unsigned char board_num = 1;           // 1: start 2: setting 3: info
 volatile unsigned char x_position = 119;        //音符起始位置 119+8=127
 volatile unsigned char speed = 4;               //音符移动速度 1-8
 
-//即将转移至包装的数据
-bit KEY4_pressed = 0;        // 判定状态
-// 将 speed 转换为字符串
-char speed_str[2];  // 1位数字 + '\0'
-volatile unsigned char temp ;
-volatile unsigned char hit_time = 0;
-volatile unsigned char current_track = 1;//音符列位置 1-2
+
+unsigned char result;
 
 // 初始化任务
 void task_init(void) _task_ 0
@@ -41,7 +42,7 @@ void task_init(void) _task_ 0
     os_wait(K_IVL, 50, 0);
 
     //显示菜单教程
-    OLED_ShowString(3, 0, "QG Dash v2.8", 8);
+    OLED_ShowString(3, 0, "QG Dash v2.9", 8);
     OLED_ShowString(3, 2, "Key1:up", 8);
     OLED_ShowString(3, 3, "Key2:down", 8);
     OLED_ShowString(3, 4, "Key3:comfirm", 8);
@@ -300,27 +301,8 @@ void task_key(void) _task_ 1
                 if (KEY4 == 0)
                 {
                     os_wait(K_IVL, 10, 0); // 消抖  
-                    while (KEY4 == 0) os_wait(K_IVL, 1, 0);
-                }
-                KEY4_pressed = 1; 
-                hit_time = (x_position - 16) / speed;
-                os_wait(K_IVL, 3, 0);
-                if (x_position < 40 && KEY4_pressed == 1)
-                {
-                    if (hit_time < 1)
-                    {
-                        OLED_ShowString(3, 6, "Perfect", 8);
-                    }
-                    else if (hit_time < 2)
-                    {
-                        OLED_ShowString(3, 6, "Good   ", 8);
-                    }
-                    else if (hit_time < 3)
-                    {
-                        OLED_ShowString(3, 6, "Bad    ", 8);
-                    }
-                    x_position = 121 - speed * 2;
-                    KEY4_pressed = 0;
+                    while (KEY4 == 0) os_wait(K_IVL, 1, 0); 
+                    key4_pressed = 1;
                 }
                 os_wait(K_IVL, 3, 0);
             }
@@ -414,7 +396,7 @@ void task_board(void) _task_ 2
                 OLED_ShowString(3, 0, "Auth:Kyunana", 16);
                 OLED_ShowString(3, 3, "25/4/2025", 8);
                 OLED_ShowString(3, 4, "in AT89C52RC", 8);
-                OLED_ShowString(3, 5, "V2.8", 8);
+                OLED_ShowString(3, 5, "V2.9", 8);
                 OLED_ShowString(3, 6, "press 3 to quit", 16);
                 os_wait(K_IVL, 1000, 0);
             }
@@ -449,8 +431,11 @@ void task_game(void) _task_ 3
                 OLED_ShowString(3, 3, "Track1 now", 16);
                 OLED_ShowString(3, 6, "Loading...", 8);
                 musicPlaying = 1;
-                while(musicPlaying == 1)
+                while (musicPlaying == 1)
+                {
                     os_wait(K_IVL, 100, 0);
+
+                }
                 OLED_Clear();
 
                 OLED_ShowString(3, 0, "game end", 16);
@@ -470,8 +455,11 @@ void task_game(void) _task_ 3
                 OLED_ShowString(3, 3, "Track2 now", 16);
                 OLED_ShowString(3, 6, "Loading...", 8);
                 musicPlaying = 1; 
-                while(musicPlaying == 1)
+                while (musicPlaying == 1)
+                {
                     os_wait(K_IVL, 100, 0);
+
+                }
                 OLED_Clear(); 
 
                 OLED_ShowString(3, 0, "game end", 16);
@@ -526,7 +514,6 @@ void task_score(void) _task_ 4
 						if (temp_score > track2_score)
 								track2_score = temp_score;
 				}
-
 				temp_score = 0;  // 重置临时分数
 				os_wait(K_IVL, 100, 0);
 			}
@@ -557,23 +544,19 @@ void task_setting(void) _task_ 5
                 // 传递字符串指针给 OLED_ShowString
                 OLED_ShowValue(60, 3, speed, 16); 
                 OLED_ShowString(16, 0, "$", 16);//判定点
-               
-                //移动Q（避免使用for而无法识别speed输入）
-                if (x_position > speed && x_position < 120 && KEY4_pressed == 0)
+                note_spawn(speed, 1); 
+                if (key4_pressed == 1)
                 {
-                    OLED_ShowString(x_position, 0, " ", 16);
-                    x_position = x_position - speed;
-                    OLED_ShowString(x_position, 0, "Q", 16);
+                    result = check_note_hit(speed, 1);
+                    if (result != NOTE_MISS)
+                    {
+                        OLED_ShowString(3, 6, HitResults[result], 8); // 显示判定
+                        key4_pressed = 0;
+                    }
+                    os_wait(K_IVL, 1, 0);
                 }
-                else 
-                {
-                    OLED_ShowString(x_position, 0, " ", 16);
-                    OLED_ShowString(3, 6, "Miss   ", 8);
-                    x_position = 121 - speed * 2;
-                    KEY4_pressed = 0;
-                }
-                os_wait(K_IVL, 1, 0);
             }
+                
 
             //setting_state == 0后 进入退出步骤
             os_wait(K_IVL, 100, 0);

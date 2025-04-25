@@ -426,6 +426,16 @@
               <FileType>5</FileType>
               <FilePath>.\Headers\oled.h</FilePath>
             </File>
+            <File>
+              <FileName>note.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\sources\note.c</FilePath>
+            </File>
+            <File>
+              <FileName>note.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Headers\note.h</FilePath>
+            </File>
           </Files>
         </Group>
       </Groups>

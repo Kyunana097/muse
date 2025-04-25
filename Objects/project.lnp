@@ -2,6 +2,7 @@
 ".\Objects\oledfont.obj",
 ".\Objects\music.obj",
 ".\Objects\Delay.obj",
-".\Objects\oled.obj" 
+".\Objects\oled.obj",
+".\Objects\note.obj" 
 TO ".\Objects\project" Rtx51Tiny 
 PRINT(".\Listings\project.m51") RAMSIZE(256) 
