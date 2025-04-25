@@ -1,10 +1,10 @@
-C51 COMPILER V9.60.0.0   MAIN                                                              04/24/2025 20:52:16 PAGE 1   
+C51 COMPILER V9.60.0.0   MAIN                                                              04/25/2025 09:39:06 PAGE 1   
 
 
 C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MAIN
 OBJECT MODULE PLACED IN .\Objects\main.obj
-COMPILER INVOKED BY: D:\keil\C51\BIN\C51.EXE main.c OPTIMIZE(8,SPEED) BROWSE INCDIR(.\Headers;.\sources) DEBUG OBJECTEXT
-                    -END PRINT(.\Listings\main.lst) OBJECT(.\Objects\main.obj)
+COMPILER INVOKED BY: D:\keil5\C51\BIN\C51.EXE main.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\Headers;.\sources) DEBUG OB
+                    -JECTEXTEND PRINT(.\Listings\main.lst) TABS(2) OBJECT(.\Objects\main.obj)
 
 line level    source
 
@@ -13,447 +13,431 @@ line level    source
    3          #include "Headers/oled.h"
    4          #include "Headers/oledfont.h"
    5          #include "Headers/RTX51TNY.H"
-   6          #include "Headers/note.h"
+   6          #include "Headers/music.h"
    7          
    8          sbit KEY1 = P3 ^ 1;
    9          sbit KEY2 = P3 ^ 0;
   10          sbit KEY3 = P3 ^ 2;
   11          sbit KEY4 = P3 ^ 3;
   12          
-  13          // 游戏状态变量
-  14          bit game_state = 0;          // 0: 主菜单，1: 游戏进行中
-  15          bit setting_state = 0;       // 0: 主菜单，1: 设置界面
-  16          bit score_state = 0;         // 0: 主菜单，1: 最高分界面
-  17          volatile unsigned char board_num = 1;           // 1: start 2: setting 3: score
-  18          volatile unsigned char x_position = 119;        //音符起始位置 119+8=127
-  19          volatile unsigned char speed = 4;               //音符移动速度 1-8
-  20          
-  21          // 将 speed 转换为字符串
-  22          char speed_str[2];  // 1位数字 + '\0'
-  23          unsigned char temp ;
-  24          bit KEY4_pressed = 0;        // 判定状态
-  25          unsigned char hit_time = 0;
-  26          
-  27          unsigned char current_track = 1;//音符列位置 1-2
+  13          
+  14          
+  15          // 游戏状态变量
+  16          bit game_state = 0;          // 0: 主菜单，1: 游戏进行中
+  17          bit setting_state = 0;       // 0: 主菜单，1: 设置界面
+  18          bit score_state = 0;         // 0: 主菜单，1: 最高分界面
+  19          volatile unsigned char board_num = 1;           // 1: start 2: setting 3: score
+  20          volatile unsigned char x_position = 119;        //音符起始位置 119+8=127
+  21          volatile unsigned char speed = 4;               //音符移动速度 1-8
+  22          
+  23          // 将 speed 转换为字符串
+  24          char speed_str[2];  // 1位数字 + '\0'
+  25          unsigned char temp ;
+  26          bit KEY4_pressed = 0;        // 判定状态
+  27          unsigned char hit_time = 0;
   28          
-  29          // 初始化任务
-  30          void task_init(void) _task_ 0
-  31          {
-  32   1          P2 = 0xFF;
-  33   1          OLED_Init();
-  34   1          OLED_DrawBMP(0, 0, 128, 8, BMP1);//logo
-  35   1          os_wait(K_IVL, 50, 0);
-  36   1      
-  37   1          os_create_task(1);  // 按键任务（优先级1）
-  38   1          os_create_task(2);  // 菜单任务（优先级2）
-  39   1          //os_create_task(3);  // 游戏任务（优先级3）
-  40   1          //os_create_task(4);  // 积分任务（优先级4）
-  41   1          //os_create_task(5);  // 设置任务（优先级5）
-  42   1          os_create_task(6);  // 音乐任务（优先级6）
-  43   1      
-  44   1          os_delete_task(0);  // 删除自身
-  45   1      }
-  46          
-  47          // 按键任务
-  48          void task_key(void) _task_ 1
-  49          {
-  50   1          while(1)
-  51   1          {
-  52   2              /*主菜单中
-  53   2              * key1 = up
-  54   2              * key2 = down
-C51 COMPILER V9.60.0.0   MAIN                                                              04/24/2025 20:52:16 PAGE 2   
+  29          unsigned char current_track = 1;//音符列位置 1-2
+  30          
+  31          // 初始化任务
+  32          void task_init(void) _task_ 0
+  33          {
+  34   1          P2 = 0xFF;
+  35   1          OLED_Init();
+  36   1          OLED_DrawBMP(0, 0, 128, 8, BMP1);//logo
+  37   1          os_wait(K_IVL, 50, 0);
+  38   1      
+  39   1          os_create_task(1);  // 按键任务（优先级1）
+  40   1          os_create_task(2);  // 菜单任务（优先级2）
+  41   1          //os_create_task(3);  // 游戏任务（优先级3）
+  42   1          //os_create_task(4);  // 积分任务（优先级4）
+  43   1          //os_create_task(5);  // 设置任务（优先级5）
+  44   1      
+  45   1          os_delete_task(0);  // 删除自身
+  46   1      }
+  47          
+  48          // 按键任务
+  49          void task_key(void) _task_ 1
+  50          {
+  51   1          while(1)
+  52   1          {
+  53   2              /*主菜单中
+  54   2              * key1 = up
+C51 COMPILER V9.60.0.0   MAIN                                                              04/25/2025 09:39:06 PAGE 2   
 
-  55   2              * key3 = comfirm
-  56   2              */
-  57   2              if (game_state == 0 && setting_state == 0 && score_state == 0)
-  58   2              {
-  59   3                  if (KEY1 == 0)
-  60   3                  {
-  61   4                      os_wait(K_IVL, 3, 0); // 消抖
-  62   4                      if (KEY1 == 0)         //确认按钮按下
-  63   4                      {
-  64   5                          os_wait(K_IVL, 10, 0); // 消抖
-  65   5                          board_num--;       //向上
-  66   5                          if(board_num < 1)
-  67   5                              board_num = 3; //越界循环
-  68   5                          while (KEY1 == 0) os_wait(K_IVL, 1, 0); // 等待释放
-  69   5                      }
-  70   4                  }
-  71   3                  
-  72   3                  if (KEY2 == 0)
-  73   3                  {
-  74   4                      os_wait(K_IVL, 3, 0); // 消抖
-  75   4                      if (KEY2 == 0)         //确认按钮按下
-  76   4                      {
-  77   5                          os_wait(K_IVL, 10, 0); // 消抖
-  78   5                          board_num++;        //向下
-  79   5                          if(board_num > 3)
-  80   5                              board_num = 1;//越界循环
-  81   5                          while (KEY2 == 0) os_wait(K_IVL, 1, 0);// 等待释放
-  82   5                      }
-  83   4                     
-  84   4                  }
-  85   3                  
-  86   3                  if (KEY3 == 0)
-  87   3                  {
-  88   4                      os_wait(K_IVL, 3, 0); // 消抖
-  89   4                      if (KEY3 == 0)         //等待按键释放
-  90   4                      {
-  91   5                          os_wait(K_IVL, 10, 0); // 消抖  
-  92   5                          switch (board_num)
-  93   5                          {
-  94   6                          //game选项下按下确认按键
-  95   6                          case 1:
-  96   6                              game_state = 1;
-  97   6                              os_delete_task(2);  //挂起菜单
-  98   6                              os_create_task(3);  //启动游戏任务（优先级3）
-  99   6                              break;
- 100   6                      
- 101   6                          //setting选项下按下确认按键
- 102   6                          case 2:
- 103   6                              setting_state = 1;
- 104   6                              os_delete_task(2);  //挂起菜单
- 105   6                              os_create_task(5);  //启动设置任务（优先级5）
- 106   6                              break;
- 107   6      
- 108   6                          //score选项下按下确认按钮
- 109   6                          case 3:
- 110   6                              score_state = 1;
- 111   6                              os_delete_task(2);  //挂起菜单
- 112   6                              os_create_task(4);  //启动积分任务（优先级4）
- 113   6                              break;
- 114   6                          }
- 115   5                          while (KEY3 == 0) os_wait(K_IVL, 1, 0);
- 116   5                      }
-C51 COMPILER V9.60.0.0   MAIN                                                              04/24/2025 20:52:16 PAGE 3   
+  55   2              * key2 = down
+  56   2              * key3 = comfirm
+  57   2              */
+  58   2              if (game_state == 0 && setting_state == 0 && score_state == 0)
+  59   2              {
+  60   3                  if (KEY1 == 0)
+  61   3                  {
+  62   4                      os_wait(K_IVL, 3, 0); // 消抖
+  63   4                      if (KEY1 == 0)         //确认按钮按下
+  64   4                      {
+  65   5                          os_wait(K_IVL, 10, 0); // 消抖
+  66   5                          board_num--;       //向上
+  67   5                          if(board_num < 1)
+  68   5                              board_num = 3; //越界循环
+  69   5                          while (KEY1 == 0) os_wait(K_IVL, 1, 0); // 等待释放
+  70   5                      }
+  71   4                  }
+  72   3                  
+  73   3                  if (KEY2 == 0)
+  74   3                  {
+  75   4                      os_wait(K_IVL, 3, 0); // 消抖
+  76   4                      if (KEY2 == 0)         //确认按钮按下
+  77   4                      {
+  78   5                          os_wait(K_IVL, 10, 0); // 消抖
+  79   5                          board_num++;        //向下
+  80   5                          if(board_num > 3)
+  81   5                              board_num = 1;//越界循环
+  82   5                          while (KEY2 == 0) os_wait(K_IVL, 1, 0);// 等待释放
+  83   5                      }
+  84   4                     
+  85   4                  }
+  86   3                  
+  87   3                  if (KEY3 == 0)
+  88   3                  {
+  89   4                      os_wait(K_IVL, 3, 0); // 消抖
+  90   4                      if (KEY3 == 0)         //等待按键释放
+  91   4                      {
+  92   5                          os_wait(K_IVL, 10, 0); // 消抖  
+  93   5                          switch (board_num)
+  94   5                          {
+  95   6                          //game选项下按下确认按键
+  96   6                          case 1:
+  97   6                              game_state = 1;
+  98   6                              os_delete_task(2);  //挂起菜单
+  99   6                              os_create_task(3);  //启动游戏任务（优先级3）
+ 100   6                              break;
+ 101   6                      
+ 102   6                          //setting选项下按下确认按键
+ 103   6                          case 2:
+ 104   6                              setting_state = 1;
+ 105   6                              os_delete_task(2);  //挂起菜单
+ 106   6                              os_create_task(5);  //启动设置任务（优先级5）
+ 107   6                              break;
+ 108   6      
+ 109   6                          //score选项下按下确认按钮
+ 110   6                          case 3:
+ 111   6                              score_state = 1;
+ 112   6                              os_delete_task(2);  //挂起菜单
+ 113   6                              os_create_task(4);  //启动积分任务（优先级4）
+ 114   6                              break;
+ 115   6                          }
+ 116   5                          while (KEY3 == 0) os_wait(K_IVL, 1, 0);
+C51 COMPILER V9.60.0.0   MAIN                                                              04/25/2025 09:39:06 PAGE 3   
 
- 117   4                      
- 118   4                  }
- 119   3                  os_wait(K_IVL, 10, 0);      //释放内存
- 120   3              }
- 121   2      
- 122   2              /*游戏中
- 123   2              * key1 = sky
- 124   2              * key2 = ground
- 125   2              * key3 = quit
- 126   2              * key4 = pause
- 127   2              */
- 128   2              if (game_state == 1)
- 129   2              {
- 130   3                  //退出游戏
- 131   3                  if (KEY3 == 0)
- 132   3                  {
- 133   4                      os_wait(K_IVL, 3, 0); // 消抖
- 134   4                      if (KEY3 == 0)
- 135   4                      {
- 136   5                          os_wait(K_IVL, 10, 0); // 消抖  
- 137   5                          while (KEY3 == 0) os_wait(K_IVL, 1, 0);
- 138   5                      }
- 139   4                      game_state = 0;
- 140   4                      os_wait(K_IVL, 3, 0);
- 141   4                  }
- 142   3              }
- 143   2      
- 144   2              /*设置中
- 145   2              * key1 = speed plus
- 146   2              * key2 = speed less
- 147   2              * key3 = comfirm & backward
- 148   2              */
- 149   2              if (setting_state == 1)
- 150   2              {
- 151   3                  //speed减少
- 152   3                  if (KEY1 == 0)
- 153   3                  {
- 154   4                      os_wait(K_IVL, 3, 0); // 消抖
- 155   4                      if (KEY1 == 0)
- 156   4                      {
- 157   5                          os_wait(K_IVL, 10, 0); // 消抖
- 158   5                          speed--;       //speed减少
- 159   5                          if (speed < 2)
- 160   5                              speed = 1; //越界循环
- 161   5                          while (KEY1 == 0) os_wait(K_IVL, 1, 0); // 等待释放
- 162   5      
- 163   5                      }
- 164   4                      
- 165   4                  }
- 166   3      
- 167   3                  //speed增加
- 168   3                  if (KEY2 == 0)
- 169   3                  {
- 170   4                      os_wait(K_IVL, 3, 0); // 消抖
- 171   4                      if (KEY2 == 0)         
- 172   4                      {
- 173   5                          os_wait(K_IVL, 10, 0); // 消抖
- 174   5                          speed++;        //speed增加
- 175   5                          if (speed > 7)
- 176   5                              speed = 8;//越界循环
- 177   5                          while (KEY2 == 0) os_wait(K_IVL, 1, 0);
- 178   5      
-C51 COMPILER V9.60.0.0   MAIN                                                              04/24/2025 20:52:16 PAGE 4   
+ 117   5                      }
+ 118   4                      
+ 119   4                  }
+ 120   3                  os_wait(K_IVL, 10, 0);      //释放内存
+ 121   3              }
+ 122   2      
+ 123   2              /*游戏中
+ 124   2              * key1 = sky
+ 125   2              * key2 = ground
+ 126   2              * key3 = quit
+ 127   2              * key4 = pause
+ 128   2              */
+ 129   2              if (game_state == 1)
+ 130   2              {
+ 131   3                  //退出游戏
+ 132   3                  if (KEY3 == 0)
+ 133   3                  {
+ 134   4                      os_wait(K_IVL, 3, 0); // 消抖
+ 135   4                      if (KEY3 == 0)
+ 136   4                      {
+ 137   5                          os_wait(K_IVL, 10, 0); // 消抖  
+ 138   5                          while (KEY3 == 0) os_wait(K_IVL, 1, 0);
+ 139   5                      }
+ 140   4                      game_state = 0;
+ 141   4                      os_wait(K_IVL, 3, 0);
+ 142   4                  }
+ 143   3              }
+ 144   2      
+ 145   2              /*设置中
+ 146   2              * key1 = speed plus
+ 147   2              * key2 = speed less
+ 148   2              * key3 = comfirm & backward
+ 149   2              */
+ 150   2              if (setting_state == 1)
+ 151   2              {
+ 152   3                  //speed减少
+ 153   3                  if (KEY1 == 0)
+ 154   3                  {
+ 155   4                      os_wait(K_IVL, 3, 0); // 消抖
+ 156   4                      if (KEY1 == 0)
+ 157   4                      {
+ 158   5                          os_wait(K_IVL, 10, 0); // 消抖
+ 159   5                          speed--;       //speed减少
+ 160   5                          if (speed < 2)
+ 161   5                              speed = 1; //越界循环
+ 162   5                          while (KEY1 == 0) os_wait(K_IVL, 1, 0); // 等待释放
+ 163   5      
+ 164   5                      }
+ 165   4                      
+ 166   4                  }
+ 167   3      
+ 168   3                  //speed增加
+ 169   3                  if (KEY2 == 0)
+ 170   3                  {
+ 171   4                      os_wait(K_IVL, 3, 0); // 消抖
+ 172   4                      if (KEY2 == 0)         
+ 173   4                      {
+ 174   5                          os_wait(K_IVL, 10, 0); // 消抖
+ 175   5                          speed++;        //speed增加
+ 176   5                          if (speed > 7)
+ 177   5                              speed = 8;//越界循环
+ 178   5                          while (KEY2 == 0) os_wait(K_IVL, 1, 0);
+C51 COMPILER V9.60.0.0   MAIN                                                              04/25/2025 09:39:06 PAGE 4   
 
- 179   5                      }
- 180   4                  }
- 181   3      
- 182   3                  //退出设置
- 183   3                  if (KEY3 == 0)
- 184   3                  {
- 185   4                      os_wait(K_IVL, 3, 0); // 消抖
- 186   4                      if (KEY3 == 0)         
- 187   4                      {
- 188   5                          os_wait(K_IVL, 10, 0); // 消抖  
- 189   5                          while (KEY3 == 0) os_wait(K_IVL, 1, 0);
- 190   5                      }
- 191   4                      setting_state = 0;
- 192   4                      os_wait(K_IVL, 3, 0);
- 193   4                  }
- 194   3      
- 195   3                  //判定
- 196   3                  if (KEY4 == 0)
- 197   3                  {
- 198   4                      os_wait(K_IVL, 3, 0); // 消抖
- 199   4                      if (KEY4 == 0)
- 200   4                      {
- 201   5                          os_wait(K_IVL, 10, 0); // 消抖  
- 202   5                          while (KEY4 == 0) os_wait(K_IVL, 1, 0);
- 203   5                      }
- 204   4                      KEY4_pressed = 1;
- 205   4                      os_wait(K_IVL, 3, 0);
- 206   4                  }
- 207   3      
- 208   3                  os_wait(K_IVL, 10, 0);      //释放内存
- 209   3                  
- 210   3              }
- 211   2              /*计分板中
- 212   2              * key3 = back
- 213   2              */
- 214   2              if (score_state == 1)
- 215   2              {
- 216   3                  //退出计分板
- 217   3                  if (KEY3 == 0)
- 218   3                  {
- 219   4                      os_wait(K_IVL, 3, 0); // 消抖
- 220   4                      if (KEY3 == 0);        
- 221   4                      {
- 222   5                          os_wait(K_IVL, 10, 0); // 消抖  
- 223   5                          while (KEY3 == 0) os_wait(K_IVL, 1, 0);
- 224   5                      }
- 225   4                      score_state = 0;
- 226   4                      os_wait(K_IVL, 3, 0);
- 227   4                  }
- 228   3              }
- 229   2          }
- 230   1      }
- 231          
- 232          // 菜单任务
- 233          void task_board(void) _task_ 2
- 234          {
- 235   1          OLED_Clear();
- 236   1          while (1)
- 237   1          {  
- 238   2              os_wait(K_IVL, 10, 0);
- 239   2              P2 = 0xAA;
- 240   2              while (game_state == 0 && score_state == 0 && setting_state == 0)
-C51 COMPILER V9.60.0.0   MAIN                                                              04/24/2025 20:52:16 PAGE 5   
+ 179   5      
+ 180   5                      }
+ 181   4                  }
+ 182   3      
+ 183   3                  //退出设置
+ 184   3                  if (KEY3 == 0)
+ 185   3                  {
+ 186   4                      os_wait(K_IVL, 3, 0); // 消抖
+ 187   4                      if (KEY3 == 0)         
+ 188   4                      {
+ 189   5                          os_wait(K_IVL, 10, 0); // 消抖  
+ 190   5                          while (KEY3 == 0) os_wait(K_IVL, 1, 0);
+ 191   5                      }
+ 192   4                      setting_state = 0;
+ 193   4                      os_wait(K_IVL, 3, 0);
+ 194   4                  }
+ 195   3      
+ 196   3                  //判定
+ 197   3                  if (KEY4 == 0)
+ 198   3                  {
+ 199   4                      os_wait(K_IVL, 3, 0); // 消抖
+ 200   4                      if (KEY4 == 0)
+ 201   4                      {
+ 202   5                          os_wait(K_IVL, 10, 0); // 消抖  
+ 203   5                          while (KEY4 == 0) os_wait(K_IVL, 1, 0);
+ 204   5                      }
+ 205   4                      KEY4_pressed = 1;
+ 206   4                      os_wait(K_IVL, 3, 0);
+ 207   4                  }
+ 208   3      
+ 209   3                  os_wait(K_IVL, 10, 0);      //释放内存
+ 210   3                  
+ 211   3              }
+ 212   2              /*计分板中
+ 213   2              * key3 = back
+ 214   2              */
+ 215   2              if (score_state == 1)
+ 216   2              {
+ 217   3                  //退出计分板
+ 218   3                  if (KEY3 == 0)
+ 219   3                  {
+ 220   4                      os_wait(K_IVL, 3, 0); // 消抖
+ 221   4                      if (KEY3 == 0);        
+ 222   4                      {
+ 223   5                          os_wait(K_IVL, 10, 0); // 消抖  
+ 224   5                          while (KEY3 == 0) os_wait(K_IVL, 1, 0);
+ 225   5                      }
+ 226   4                      score_state = 0;
+ 227   4                      os_wait(K_IVL, 3, 0);
+ 228   4                  }
+ 229   3              }
+ 230   2          }
+ 231   1      }
+ 232          
+ 233          // 菜单任务
+ 234          void task_board(void) _task_ 2
+ 235          {
+ 236   1          OLED_Clear();
+ 237   1          while (1)
+ 238   1          {  
+ 239   2              os_wait(K_IVL, 10, 0);
+ 240   2              P2 = 0xAA;
+C51 COMPILER V9.60.0.0   MAIN                                                              04/25/2025 09:39:06 PAGE 5   
 
- 241   2              {
- 242   3                  OLED_ShowString(25, 0, "Start", 16);
- 243   3                  OLED_ShowString(25, 3, "Setting", 16);
- 244   3                  OLED_ShowString(25, 6, "Score", 16);
- 245   3                  switch (board_num)
- 246   3                  {
- 247   4                  case 1: 
- 248   4                      OLED_ShowString(3, 0, ">>", 16);
- 249   4                      OLED_ShowString(3, 3, "  ", 16);
- 250   4                      OLED_ShowString(3, 6, "  ", 16);
- 251   4                      break;
- 252   4      
- 253   4                  case 2: 
- 254   4                      OLED_ShowString(3, 0, "  ", 16);
- 255   4                      OLED_ShowString(3, 3, ">>", 16);
- 256   4                      OLED_ShowString(3, 6, "  ", 16);
- 257   4                      break;
- 258   4      
- 259   4                  case 3: 
- 260   4                      OLED_ShowString(3, 0, "  ", 16);
- 261   4                      OLED_ShowString(3, 3, "  ", 16);
- 262   4                      OLED_ShowString(3, 6, ">>", 16);
- 263   4                      break;
- 264   4                  }
- 265   3                  os_wait(K_IVL, 10, 0);  
- 266   3              }
- 267   2          }
- 268   1      }
- 269          
- 270          // 游戏任务
- 271          void task_game(void) _task_ 3
- 272          {
- 273   1          while (1)  
- 274   1          {
- 275   2              if (game_state == 1)
- 276   2              {
- 277   3                  OLED_Clear();
- 278   3      
+ 241   2              while (game_state == 0 && score_state == 0 && setting_state == 0)
+ 242   2              {
+ 243   3                  OLED_ShowString(25, 0, "Start", 16);
+ 244   3                  OLED_ShowString(25, 3, "Setting", 16);
+ 245   3                  OLED_ShowString(25, 6, "Score", 16);
+ 246   3                  switch (board_num)
+ 247   3                  {
+ 248   4                  case 1: 
+ 249   4                      OLED_ShowString(3, 0, ">>", 16);
+ 250   4                      OLED_ShowString(3, 3, "  ", 16);
+ 251   4                      OLED_ShowString(3, 6, "  ", 16);
+ 252   4                      break;
+ 253   4      
+ 254   4                  case 2: 
+ 255   4                      OLED_ShowString(3, 0, "  ", 16);
+ 256   4                      OLED_ShowString(3, 3, ">>", 16);
+ 257   4                      OLED_ShowString(3, 6, "  ", 16);
+ 258   4                      break;
+ 259   4      
+ 260   4                  case 3: 
+ 261   4                      OLED_ShowString(3, 0, "  ", 16);
+ 262   4                      OLED_ShowString(3, 3, "  ", 16);
+ 263   4                      OLED_ShowString(3, 6, ">>", 16);
+ 264   4                      break;
+ 265   4                  }
+ 266   3                  os_wait(K_IVL, 10, 0);  
+ 267   3              }
+ 268   2          }
+ 269   1      }
+ 270          
+ 271          // 游戏任务
+ 272          void task_game(void) _task_ 3
+ 273          {
+ 274   1          while (1)  
+ 275   1          {
+ 276   2              if (game_state == 1)
+ 277   2              {
+ 278   3                  OLED_Clear();
  279   3                  P2 = 0x01;
- 280   3                  //暂未添加游戏逻辑
- 281   3                  while (game_state == 1)
- 282   3                  {
- 283   4                      OLED_ShowString(3, 3, "gamestate now", 16); 
- 284   4                  }
- 285   3                  //game_state == 0后 进入退出步骤
- 286   3                  OLED_Clear();
- 287   3                  os_wait(K_IVL, 100, 0);
- 288   3                  game_state = 0;
- 289   3                  os_create_task(2);  //激活菜单
- 290   3                  os_delete_task(3);  //挂起游戏
- 291   3              }
- 292   2              else
- 293   2              {
- 294   3                  os_wait(K_IVL, 100, 0);
- 295   3              }
- 296   2          }
- 297   1      }
- 298          
- 299          // 积分任务
- 300          void task_score(void) _task_ 4
- 301          {
- 302   1          
-C51 COMPILER V9.60.0.0   MAIN                                                              04/24/2025 20:52:16 PAGE 6   
+ 280   3                  Music_Init(Track1); 
+ 281   3                  //暂未添加游戏逻辑
+ 282   3                  while (game_state == 1)
+ 283   3                  {   
+ 284   4                      Music_play();
+ 285   4                      OLED_ShowString(3, 3, "gamestate now", 16);
+ 286   4                  }
+ 287   3                  //game_state == 0后 进入退出步骤
+ 288   3                  OLED_Clear();
+ 289   3                  os_wait(K_IVL, 100, 0);
+ 290   3                  game_state = 0;
+ 291   3                  os_create_task(2);  //激活菜单
+ 292   3                  os_delete_task(3);  //挂起游戏
+ 293   3              }
+ 294   2              else
+ 295   2              {
+ 296   3                  os_wait(K_IVL, 100, 0);
+ 297   3              }
+ 298   2          }
+ 299   1      }
+ 300          
+ 301          // 积分任务
+ 302          void task_score(void) _task_ 4
+C51 COMPILER V9.60.0.0   MAIN                                                              04/25/2025 09:39:06 PAGE 6   
 
- 303   1          while (1)
- 304   1          {
- 305   2              if (score_state == 1)
- 306   2              {
- 307   3                  OLED_Init(); 
- 308   3                  OLED_Clear();
- 309   3                  P2 = 0x02;
- 310   3                  // 添加积分显示逻辑
- 311   3                  while (score_state == 1)
- 312   3                  {
- 313   4                      OLED_ShowString(3, 3, "track1 = 100000", 16); 
- 314   4                      OLED_ShowString(3, 6, "track2 = 100000", 16);
- 315   4                      
- 316   4                      os_wait(K_IVL, 20, 0);
- 317   4                  }
- 318   3                  //score_state == 0后 进入退出步骤
- 319   3                  os_wait(K_IVL, 100, 0);
- 320   3                  OLED_Clear();
- 321   3                  os_create_task(2);  //激活菜单
- 322   3                  os_delete_task(4);  //挂起积分
- 323   3              }
- 324   2              else
- 325   2              {
- 326   3                  os_wait(K_IVL, 100, 0);
- 327   3              }
- 328   2          }
- 329   1      }
- 330          
- 331          // 设置任务
- 332          void task_setting(void) _task_ 5
- 333          {
- 334   1          while (1)
- 335   1          {
- 336   2              if (setting_state == 1)
- 337   2              {
- 338   3                  OLED_Init(); 
- 339   3                  OLED_Clear();
- 340   3                  os_wait(K_IVL, 10, 0);
- 341   3                  P2 = 0x03;
- 342   3                  x_position = 121 - speed * 2;
- 343   3                  while(setting_state == 1)
- 344   3                  {
- 345   4                      temp = speed;
- 346   4                      os_wait(K_IVL, 1, 0);
- 347   4      
- 348   4                      //showstring需要一个U8参数 而speed无法直接输出
- 349   4                      speed_str[0] = temp % 10 + '0';          // 得到speed的值
- 350   4                      speed_str[1] = '\0';                     // 字符串结束符
- 351   4      
- 352   4                      os_wait(K_IVL, 1, 0);
- 353   4                      OLED_ShowString(3, 3, "speed:", 16);
+ 303          {
+ 304   1          
+ 305   1          while (1)
+ 306   1          {
+ 307   2              if (score_state == 1)
+ 308   2              {
+ 309   3                  OLED_Init(); 
+ 310   3                  OLED_Clear();
+ 311   3                  P2 = 0x02;
+ 312   3                  // 添加积分显示逻辑
+ 313   3                  while (score_state == 1)
+ 314   3                  {
+ 315   4                      OLED_ShowString(3, 3, "track1 = 100000", 16); 
+ 316   4                      OLED_ShowString(3, 6, "track2 = 100000", 16);
+ 317   4                      
+ 318   4                      os_wait(K_IVL, 20, 0);
+ 319   4                  }
+ 320   3                  //score_state == 0后 进入退出步骤
+ 321   3                  os_wait(K_IVL, 100, 0);
+ 322   3                  OLED_Clear();
+ 323   3                  os_create_task(2);  //激活菜单
+ 324   3                  os_delete_task(4);  //挂起积分
+ 325   3              }
+ 326   2              else
+ 327   2              {
+ 328   3                  os_wait(K_IVL, 100, 0);
+ 329   3              }
+ 330   2          }
+ 331   1      }
+ 332          
+ 333          // 设置任务
+ 334          void task_setting(void) _task_ 5
+ 335          {
+ 336   1          while (1)
+ 337   1          {
+ 338   2              if (setting_state == 1)
+ 339   2              {
+ 340   3                  OLED_Init(); 
+ 341   3                  OLED_Clear();
+ 342   3                  os_wait(K_IVL, 10, 0);
+ 343   3                  P2 = 0x03;
+ 344   3                  x_position = 121 - speed * 2;
+ 345   3                  while(setting_state == 1)
+ 346   3                  {
+ 347   4                      temp = speed;
+ 348   4                      os_wait(K_IVL, 1, 0);
+ 349   4      
+ 350   4                      //showstring需要一个U8参数 而speed无法直接输出
+ 351   4                      speed_str[0] = temp % 10 + '0';          // 得到speed的值
+ 352   4                      speed_str[1] = '\0';                     // 字符串结束符
+ 353   4      
  354   4                      os_wait(K_IVL, 1, 0);
- 355   4                      
- 356   4                      // 传递字符串指针给 OLED_ShowString
- 357   4                      OLED_ShowString(60, 3, speed_str, 16);  // 强制转换类型 输出当前speed值
- 358   4                      OLED_ShowString(16, 0, "$", 16);//判定点
- 359   4                      hit_time = (x_position - 16) / speed;
- 360   4                      if (x_position < 31 && KEY4_pressed == 1)
- 361   4                      {
- 362   5                          if (hit_time < 1) 
- 363   5                          {
- 364   6                              OLED_ShowString(3, 6, "Perfect", 16);
-C51 COMPILER V9.60.0.0   MAIN                                                              04/24/2025 20:52:16 PAGE 7   
+ 355   4                      OLED_ShowString(3, 3, "speed:", 16);
+ 356   4                      os_wait(K_IVL, 1, 0);
+ 357   4                      
+ 358   4                      // 传递字符串指针给 OLED_ShowString
+ 359   4                      OLED_ShowString(60, 3, speed_str, 16);  // 强制转换类型 输出当前speed值
+ 360   4                      OLED_ShowString(16, 0, "$", 16);//判定点
+ 361   4                      hit_time = (x_position - 16) / speed;
+ 362   4                      if (x_position < 31 && KEY4_pressed == 1)
+ 363   4                      {
+ 364   5                          if (hit_time < 1) 
+C51 COMPILER V9.60.0.0   MAIN                                                              04/25/2025 09:39:06 PAGE 7   
 
- 365   6                          }
- 366   5                          else if (hit_time < 2)
- 367   5                          {
- 368   6                              OLED_ShowString(3, 6, "Good   ", 16);
- 369   6                          }
- 370   5                          else if(hit_time < 3)
- 371   5                          {
- 372   6                              OLED_ShowString(3, 6, "Bad    ", 16);
- 373   6                          }
- 374   5                          OLED_ShowString(x_position, 0, " ", 16);
- 375   5                          x_position = 121 - speed * 2;
- 376   5                          KEY4_pressed = 0;
- 377   5                          continue;
- 378   5                      }
- 379   4                      //移动Q（避免使用for而无法识别speed输入）
- 380   4                      if (x_position > speed && x_position < 120 && KEY4_pressed == 0)
- 381   4                      {
- 382   5                          OLED_ShowString(x_position, 0, " ", 16);
- 383   5                          x_position = x_position - speed;
- 384   5                          OLED_ShowString(x_position, 0, "Q", 16);
- 385   5                      }
- 386   4                      else 
- 387   4                      {
- 388   5                          OLED_ShowString(x_position, 0, " ", 16);
- 389   5                          x_position = 121 - speed * 2;
- 390   5                          KEY4_pressed = 0;
- 391   5      
- 392   5                          OLED_ShowString(3, 6, "Miss   ", 16);
- 393   5                      }
- 394   4                      os_wait(K_IVL, 1, 0);
- 395   4                  }
- 396   3      
- 397   3                  //setting_state == 0后 进入退出步骤
- 398   3                  os_wait(K_IVL, 100, 0);
- 399   3                  OLED_Clear();
- 400   3                  os_create_task(2);  //激活菜单
- 401   3                  os_delete_task(5);  //挂起设置
- 402   3              }
- 403   2              else
- 404   2              {
- 405   3                  os_wait(K_IVL, 100, 0);
- 406   3              }
- 407   2          }
- 408   1      }
- 409          
- 410          //蜂鸣器任务（未启用 需使用定时器1）
- 411          void task_beep(void) _task_ 6
- 412          {
- 413   1          while (1)
- 414   1          {
- 415   2              if (game_state == 1)
- 416   2              {
- 417   3                  os_wait(K_IVL, 100, 0);
- 418   3              }
- 419   2              else
- 420   2              {
- 421   3                  os_wait(K_IVL, 100, 0);
- 422   3              }
- 423   2          }
- 424   1      }
+ 365   5                          {
+ 366   6                              OLED_ShowString(3, 6, "Perfect", 16);
+ 367   6                          }
+ 368   5                          else if (hit_time < 2)
+ 369   5                          {
+ 370   6                              OLED_ShowString(3, 6, "Good   ", 16);
+ 371   6                          }
+ 372   5                          else if(hit_time < 3)
+ 373   5                          {
+ 374   6                              OLED_ShowString(3, 6, "Bad    ", 16);
+ 375   6                          }
+ 376   5                          OLED_ShowString(x_position, 0, " ", 16);
+ 377   5                          x_position = 121 - speed * 2;
+ 378   5                          KEY4_pressed = 0;
+ 379   5                          continue;
+ 380   5                      }
+ 381   4                      //移动Q（避免使用for而无法识别speed输入）
+ 382   4                      if (x_position > speed && x_position < 120 && KEY4_pressed == 0)
+ 383   4                      {
+ 384   5                          OLED_ShowString(x_position, 0, " ", 16);
+ 385   5                          x_position = x_position - speed;
+ 386   5                          OLED_ShowString(x_position, 0, "Q", 16);
+ 387   5                      }
+ 388   4                      else 
+ 389   4                      {
+ 390   5                          OLED_ShowString(x_position, 0, " ", 16);
+ 391   5                          if(x_position < speed)
+ 392   5                              OLED_ShowString(3, 6, "Miss   ", 16);
+ 393   5                          x_position = 121 - speed * 2;
+ 394   5                          KEY4_pressed = 0;
+ 395   5                      }
+ 396   4                      os_wait(K_IVL, 1, 0);
+ 397   4                  }
+ 398   3      
+ 399   3                  //setting_state == 0后 进入退出步骤
+ 400   3                  os_wait(K_IVL, 100, 0);
+ 401   3                  OLED_Clear();
+ 402   3                  os_create_task(2);  //激活菜单
+ 403   3                  os_delete_task(5);  //挂起设置
+ 404   3              }
+ 405   2              else
+ 406   2              {
+ 407   3                  os_wait(K_IVL, 100, 0);
+ 408   3              }
+ 409   2          }
+ 410   1      }
 
-
-C51 COMPILER V9.60.0.0   MAIN                                                              04/24/2025 20:52:16 PAGE 8   
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =   1459    ----
+   CODE SIZE        =   1590    ----
    CONSTANT SIZE    =   1141    ----
-   XDATA SIZE       =   ----    ----
+   XDATA SIZE       =      8    ----
    PDATA SIZE       =   ----    ----
-   DATA SIZE        =      8    ----
+   DATA SIZE        =   ----    ----
    IDATA SIZE       =   ----    ----
    BIT SIZE         =      4    ----
 END OF MODULE INFORMATION.

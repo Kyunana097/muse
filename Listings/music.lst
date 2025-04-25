@@ -1,0 +1,185 @@
+C51 COMPILER V9.60.0.0   MUSIC                                                             04/25/2025 09:41:08 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MUSIC
+OBJECT MODULE PLACED IN .\Objects\music.obj
+COMPILER INVOKED BY: D:\keil5\C51\BIN\C51.EXE sources\music.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\Headers;.\sources)
+                    - DEBUG OBJECTEXTEND PRINT(.\Listings\music.lst) TABS(2) OBJECT(.\Objects\music.obj)
+
+line level    source
+
+   1          // Music.c
+   2          #include "Music.h"
+   3          #include "Delay.h"
+   4          
+   5          //播放速度，值为四分音符的时长(ms)   120 / 60 = 2 --> 1 / 2 * 1e3 = 500 ms
+   6          //                                 100 / 60     --> 60 / 100 * 1e3 = 600ms
+   7          #define SPEED 300
+   8          
+   9          //音符与索引对应表，P：休止符，L：低音，M：中音，H：高音，下划线：升半音符号#
+  10          #define P 0
+  11          #define L1  1
+  12          #define L1_ 2
+  13          #define L2  3
+  14          #define L2_ 4
+  15          #define L3  5
+  16          #define L4  6
+  17          #define L4_ 7
+  18          #define L5  8
+  19          #define L5_ 9
+  20          #define L6  10
+  21          #define L6_ 11
+  22          #define L7  12
+  23          #define M1  13
+  24          #define M1_ 14
+  25          #define M2  15
+  26          #define M2_ 16
+  27          #define M3  17
+  28          #define M4  18
+  29          #define M4_ 19
+  30          #define M5  20
+  31          #define M5_ 21
+  32          #define M6  22
+  33          #define M6_ 23
+  34          #define M7  24
+  35          #define H1  25
+  36          #define H1_ 26
+  37          #define H2  27
+  38          #define H2_ 28
+  39          #define H3  29
+  40          #define H4  30
+  41          #define H4_ 31
+  42          #define H5  32
+  43          #define H5_ 33
+  44          #define H6  34
+  45          #define H6_ 35
+  46          #define H7  36
+  47          
+  48          
+  49          //乐谱1
+  50          unsigned char code Track1[] =
+  51          {
+  52              //音符,时值,track(0:无,1:sky,2:ground)
+  53          
+  54              H3,4,0,
+C51 COMPILER V9.60.0.0   MUSIC                                                             04/25/2025 09:41:08 PAGE 2   
+
+  55              H2,2,0,
+  56              H1,4,0,
+  57              H2,2,0,
+  58              H3,3,0,
+  59              H4,1,0,
+  60              H3,2,0,
+  61              H2,4,0,
+  62              P,0,0,
+  63          
+  64              H3,4,0,
+  65              H2,2,0,
+  66              H1,4,0,
+  67              H2,2,0,
+  68              H3,3,0,
+  69              H4,1,0,
+  70              H3,2,0,
+  71              H2,4,0,
+  72              P,0,0,
+  73          
+  74              0xFF  //终止标志
+  75          };
+  76          
+  77          unsigned int FreqTable[] = {
+  78              0,
+  79              63628,63731,63835,63928,64021,64103,64185,64260,64331,64400,64463,64528,
+  80              64580,64633,64684,64732,64777,64820,64860,64898,64934,64968,65000,65030,
+  81              65058,65085,65110,65134,65157,65178,65198,65217,65235,65252,65268,65283,
+  82          };
+  83          
+  84          // 播放状态变量
+  85          
+  86          unsigned char FreqSelect;
+  87          int duration;
+  88          unsigned char Timer1h,Timer1l;
+  89          volatile unsigned char* currentMusic = NULL;
+  90          volatile unsigned int noteIndex = 0;
+  91          
+  92          void Music_Init(unsigned char* TrackData)
+  93          {
+  94   1          TMOD &= 0x0F;
+  95   1          TMOD |= 0x10;
+  96   1          TH1 = 0xFC;
+  97   1          TL1 = 0x18;
+  98   1          TF1 = 0;
+  99   1          TR1 = 0;
+ 100   1          ET1 = 1;
+ 101   1          EA = 1;
+ 102   1          noteIndex = 0;
+ 103   1          currentMusic = TrackData;
+ 104   1      }
+ 105          
+ 106          void Timer1_Routine() interrupt 3
+ 107          {
+ 108   1          if (FreqTable[FreqSelect])  //如果不是休止符
+ 109   1          {
+ 110   2              // 设置定时器初值
+ 111   2              TL1 = Timer1l;
+ 112   2              TH1 = Timer1h;
+ 113   2              Buzzer = !Buzzer;  // 翻转蜂鸣器IO口
+ 114   2          }
+ 115   1      }
+ 116          
+C51 COMPILER V9.60.0.0   MUSIC                                                             04/25/2025 09:41:08 PAGE 3   
+
+ 117          
+ 118          
+ 119          void note_Play()
+ 120          {
+ 121   1          // 设置定时器初值
+ 122   1          TL1 = Timer1h;
+ 123   1          TH1 = Timer1l;
+ 124   1          TR1 = 1;
+ 125   1          Delay(duration);
+ 126   1      }
+ 127          
+ 128          void Music_play()
+ 129          {
+ 130   1          // 获取音符和时值
+ 131   1          if (!currentMusic) 
+ 132   1          {
+ 133   2              Music_Stop();
+ 134   2              return;
+ 135   2          }
+ 136   1      
+ 137   1          // 检查终止标志
+ 138   1          if (currentMusic[noteIndex] == 0xFF) 
+ 139   1          {
+ 140   2              Music_Stop();
+ 141   2              return;
+ 142   2          }
+ 143   1      
+ 144   1          FreqSelect = currentMusic[noteIndex];
+ 145   1          noteIndex++;
+ 146   1          duration = SPEED  * currentMusic[noteIndex] / 4;
+ 147   1          noteIndex = noteIndex + 2;
+ 148   1          Timer1h = FreqTable[FreqSelect] / 256;
+ 149   1          Timer1l = FreqTable[FreqSelect] % 256;
+ 150   1          note_Play();
+ 151   1      }
+ 152          
+ 153          void Music_Stop(void) 
+ 154          {
+ 155   1          TR1 = 0;
+ 156   1          Buzzer = 0;
+ 157   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    308    ----
+   CONSTANT SIZE    =     55    ----
+   XDATA SIZE       =     84    ----
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

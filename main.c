@@ -3,12 +3,14 @@
 #include "Headers/oled.h"
 #include "Headers/oledfont.h"
 #include "Headers/RTX51TNY.H"
-#include "Headers/note.h"
+#include "Headers/music.h"
 
 sbit KEY1 = P3 ^ 1;
 sbit KEY2 = P3 ^ 0;
 sbit KEY3 = P3 ^ 2;
 sbit KEY4 = P3 ^ 3;
+
+
 
 // 游戏状态变量
 bit game_state = 0;          // 0: 主菜单，1: 游戏进行中
@@ -39,7 +41,6 @@ void task_init(void) _task_ 0
     //os_create_task(3);  // 游戏任务（优先级3）
     //os_create_task(4);  // 积分任务（优先级4）
     //os_create_task(5);  // 设置任务（优先级5）
-    os_create_task(6);  // 音乐任务（优先级6）
 
     os_delete_task(0);  // 删除自身
 }
@@ -275,12 +276,13 @@ void task_game(void) _task_ 3
         if (game_state == 1)
         {
             OLED_Clear();
-
             P2 = 0x01;
+            Music_Init(Track1); 
             //暂未添加游戏逻辑
             while (game_state == 1)
-            {
-                OLED_ShowString(3, 3, "gamestate now", 16); 
+            {   
+                Music_play();
+                OLED_ShowString(3, 3, "gamestate now", 16);
             }
             //game_state == 0后 进入退出步骤
             OLED_Clear();
@@ -386,10 +388,10 @@ void task_setting(void) _task_ 5
                 else 
                 {
                     OLED_ShowString(x_position, 0, " ", 16);
+                    if(x_position < speed)
+                        OLED_ShowString(3, 6, "Miss   ", 16);
                     x_position = 121 - speed * 2;
                     KEY4_pressed = 0;
-
-                    OLED_ShowString(3, 6, "Miss   ", 16);
                 }
                 os_wait(K_IVL, 1, 0);
             }
@@ -399,22 +401,6 @@ void task_setting(void) _task_ 5
             OLED_Clear();
             os_create_task(2);  //激活菜单
             os_delete_task(5);  //挂起设置
-        }
-        else
-        {
-            os_wait(K_IVL, 100, 0);
-        }
-    }
-}
-
-//蜂鸣器任务（未启用 需使用定时器1）
-void task_beep(void) _task_ 6
-{
-    while (1)
-    {
-        if (game_state == 1)
-        {
-            os_wait(K_IVL, 100, 0);
         }
         else
         {

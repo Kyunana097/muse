@@ -1,12 +1,10 @@
 // Music.c
 #include "Music.h"
-
-// 音符与索引对应表（同前）
-#define P 0
+#include "Delay.h"
 
 //播放速度，值为四分音符的时长(ms)   120 / 60 = 2 --> 1 / 2 * 1e3 = 500 ms
 // 																 100 / 60     --> 60 / 100 * 1e3 = 600ms
-#define SPEED	600
+#define SPEED	300
 
 //音符与索引对应表，P：休止符，L：低音，M：中音，H：高音，下划线：升半音符号#
 #define P	0
@@ -47,6 +45,35 @@
 #define H6_	35
 #define H7	36
 
+
+//乐谱1
+unsigned char code Track1[] =
+{
+    //音符,时值,track(0:无,1:sky,2:ground)
+
+    H3,4,0,
+    H2,2,0,
+    H1,4,0,
+    H2,2,0,
+    H3,3,0,
+    H4,1,0,
+    H3,2,0,
+    H2,4,0,
+    P,0,0,
+
+    H3,4,0,
+    H2,2,0,
+    H1,4,0,
+    H2,2,0,
+    H3,3,0,
+    H4,1,0,
+    H3,2,0,
+    H2,4,0,
+    P,0,0,
+
+    0xFF	//终止标志
+};
+
 unsigned int FreqTable[] = {
     0,
     63628,63731,63835,63928,64021,64103,64185,64260,64331,64400,64463,64528,
@@ -55,36 +82,15 @@ unsigned int FreqTable[] = {
 };
 
 // 播放状态变量
-volatile bit isPlaying = 0;
+
+unsigned char FreqSelect;
+int duration;
+unsigned char Timer1h,Timer1l;
 volatile unsigned char* currentMusic = NULL;
 volatile unsigned int noteIndex = 0;
-volatile unsigned int noteDuration = 0;
 
-void Timer1_Routine() interrupt 3 {
-    TH1 = currentMusic ? FreqTable[currentMusic[noteIndex]] / 256 : 0;
-    TL1 = currentMusic ? FreqTable[currentMusic[noteIndex]] % 256 : 0;
-
-    if (currentMusic && currentMusic[noteIndex] != P) {
-        Buzzer = !Buzzer;
-    }
-    else {
-        Buzzer = 0;
-    }
-
-    // 音符时长计时
-    if (noteDuration > 0) {
-        noteDuration--;
-        if (noteDuration == 0) {
-            // 切换到下一个音符
-            noteIndex += 2; // 跳过时值
-            if (currentMusic[noteIndex - 1] == 0xFF) {
-                MusicPlayer_Stop();
-            }
-        }
-    }
-}
-
-void Music_Init(void) {
+void Music_Init(unsigned char* TrackData)
+{
     TMOD &= 0x0F;
     TMOD |= 0x10;
     TH1 = 0xFC;
@@ -93,33 +99,59 @@ void Music_Init(void) {
     TR1 = 0;
     ET1 = 1;
     EA = 1;
-    isPlaying = 0;
+    noteIndex = 0;
+    currentMusic = TrackData;
 }
 
-void Music_Play(unsigned char* musicData) {
-    if (isPlaying) return;
-
-    currentMusic = musicData;
-    noteIndex = 0;
-    isPlaying = 1;
-    TR1 = 1;
-
-    // 加载第一个音符
-    if (currentMusic[noteIndex] != 0xFF) {
-        unsigned int freq = (currentMusic[noteIndex] == P) ? 0 : FreqTable[currentMusic[noteIndex]];
-        noteDuration = SPEED * currentMusic[noteIndex + 1] / 4;
-        TH1 = freq / 256;
-        TL1 = freq % 256;
+void Timer1_Routine() interrupt 3
+{
+    if (FreqTable[FreqSelect])	//如果不是休止符
+    {
+        // 设置定时器初值
+        TL1 = Timer1l;
+        TH1 = Timer1h;
+        Buzzer = !Buzzer;  // 翻转蜂鸣器IO口
     }
 }
 
-void Music_Stop(void) {
-    isPlaying = 0;
-    TR1 = 0;
-    Buzzer = 0;
-    currentMusic = NULL;
+
+
+void note_Play()
+{
+    // 设置定时器初值
+    TL1 = Timer1h;
+    TH1 = Timer1l;
+    TR1 = 1;
+    Delay(duration);
 }
 
-bit Music_IsPlaying(void) {
-    return isPlaying;
+void Music_play()
+{
+    // 获取音符和时值
+    if (!currentMusic) 
+    {
+        Music_Stop();
+        return;
+    }
+
+    // 检查终止标志
+    if (currentMusic[noteIndex] == 0xFF) 
+    {
+        Music_Stop();
+        return;
+    }
+
+    FreqSelect = currentMusic[noteIndex];
+    noteIndex++;
+    duration = SPEED  * currentMusic[noteIndex] / 4;
+    noteIndex = noteIndex + 2;
+    Timer1h = FreqTable[FreqSelect] / 256;
+    Timer1l = FreqTable[FreqSelect] % 256;
+    note_Play();
+}
+
+void Music_Stop(void) 
+{
+    TR1 = 0;
+    Buzzer = 0;
 }

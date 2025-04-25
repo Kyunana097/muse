@@ -1,16 +1,19 @@
 // Music.h
 #ifndef MUSIC_H
 #define MUSIC_H
-
+#ifndef NULL
+#define NULL ((void *)0)
+#endif
 #include <REGX52.H>
 
 // 蜂鸣器端口定义
 sbit Buzzer = P2 ^ 5;
+unsigned char code Track1[];
 
 // 播放控制接口
-void Music_Init(void);
-void Music_Play(unsigned char* musicData);
+void Music_Init(unsigned char* musicData);
+void note_Play(void);
+void Music_play(void);
 void Music_Stop(void);
-bit Music_IsPlaying(void);
 
 #endif
