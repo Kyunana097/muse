@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.0.0   OLED                                                              04/25/2025 16:08:42 PAGE 1   
+C51 COMPILER V9.60.0.0   OLED                                                              04/25/2025 16:30:34 PAGE 1   
 
 
 C51 COMPILER V9.60.0.0, COMPILATION OF MODULE OLED
@@ -62,7 +62,7 @@ line level    source
   52   1        da=IIC_Byte;  //要写入的字节
   53   1        OLED_SCLK_Clr();
   54   1        for(i=0;i<8;i++)  //循环八次进行掩码  
-C51 COMPILER V9.60.0.0   OLED                                                              04/25/2025 16:08:42 PAGE 2   
+C51 COMPILER V9.60.0.0   OLED                                                              04/25/2025 16:30:34 PAGE 2   
 
   55   1        {
   56   2            m=da;
@@ -126,7 +126,7 @@ line level    source
  114   1      } 
  115          
  116          //清屏函数,清完屏,整个屏幕是黑色的!和没点亮一样!!!    
-C51 COMPILER V9.60.0.0   OLED                                                              04/25/2025 16:08:42 PAGE 3   
+C51 COMPILER V9.60.0.0   OLED                                                              04/25/2025 16:30:34 PAGE 3   
 
  117          void OLED_Clear(void)  
  118          {  
@@ -190,7 +190,7 @@ line level    source
  176          {
  177   1        u8 i = 0;
  178   1        char buffer[5]; // 存储 "0"~"1000"（4 位 + '\0'）
-C51 COMPILER V9.60.0.0   OLED                                                              04/25/2025 16:08:42 PAGE 4   
+C51 COMPILER V9.60.0.0   OLED                                                              04/25/2025 16:30:34 PAGE 4   
 
  179   1      
  180   1        // 将数字转换为字符串
@@ -254,7 +254,7 @@ MODULE INFORMATION:   STATIC OVERLAYABLE
    XDATA SIZE       =   ----      23
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----
-C51 COMPILER V9.60.0.0   OLED                                                              04/25/2025 16:08:42 PAGE 5   
+C51 COMPILER V9.60.0.0   OLED                                                              04/25/2025 16:30:34 PAGE 5   
 
    IDATA SIZE       =   ----    ----
    BIT SIZE         =   ----    ----

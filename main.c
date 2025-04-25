@@ -40,7 +40,7 @@ void task_init(void) _task_ 0
     os_wait(K_IVL, 50, 0);
 
     //显示菜单教程
-    OLED_ShowString(3, 0, "QG Dash v2.6", 8);
+    OLED_ShowString(3, 0, "QG Dash v2.7", 8);
     OLED_ShowString(3, 2, "Key1:up", 8);
     OLED_ShowString(3, 3, "Key2:down", 8);
     OLED_ShowString(3, 4, "Key3:comfirm", 8);
@@ -412,7 +412,7 @@ void task_board(void) _task_ 2
                 OLED_ShowString(3, 0, "Auth:Kyunana", 16);
                 OLED_ShowString(3, 3, "25/4/2025", 8);
                 OLED_ShowString(3, 4, "in AT89C52RC", 8);
-                OLED_ShowString(3, 5, "V2.6", 8);
+                OLED_ShowString(3, 5, "V2.7", 8);
                 OLED_ShowString(3, 6, "press 3 to quit", 16);
                 os_wait(K_IVL, 1000, 0);
             }
@@ -444,14 +444,15 @@ void task_game(void) _task_ 3
                 Music_Init(Track1); 
                 os_wait(K_IVL, 1000, 0);
                 OLED_Clear();
-                while (isPlaying == 1)
-                {
-                    OLED_ShowString(3, 0, "game end", 16);
-                    OLED_ShowString(3, 3, "your score", 16);
-                    OLED_ShowValue(3, 6, track1_score, 16);
-                    os_wait(K_IVL, 1000, 0); 
-                    isPlaying = 0;
-                }
+
+                OLED_ShowString(3, 0, "game end", 16);
+                OLED_ShowString(3, 3, "your score", 16);
+                OLED_ShowValue(3, 6, track1_score, 16);
+                os_wait(K_IVL, 2000, 0);  
+                // 退出游戏状态
+                isPlaying = 0;
+                // 确保积分任务已完成处理
+                os_wait(K_IVL, 100, 0);
             }
 
             //Track2
@@ -464,14 +465,15 @@ void task_game(void) _task_ 3
 
                 os_wait(K_IVL, 1000, 0);
                 OLED_Clear(); 
-                while (isPlaying == 1)
-                {
-                    OLED_ShowString(3, 0, "game end", 16);
-                    OLED_ShowString(3, 3, "your score", 16);
-                    OLED_ShowValue(3, 6, track2_score, 16);
-                    os_wait(K_IVL, 1000, 0); 
-                    isPlaying = 0;
-                }
+
+                OLED_ShowString(3, 0, "game end", 16);
+                OLED_ShowString(3, 3, "your score", 16);
+                OLED_ShowValue(3, 6, track2_score, 16);
+                os_wait(K_IVL, 2000, 0);
+                // 退出游戏状态
+                isPlaying = 0;
+                // 确保积分任务已完成处理
+                os_wait(K_IVL, 100, 0);
             }
 
             //此处添加玩家游戏后结算选择界面（回到主菜单或继续选歌）
@@ -494,30 +496,36 @@ void task_game(void) _task_ 3
 // 积分任务
 void task_score(void) _task_ 4
 {
-    while (game_state == 1)
+    while (1)
     {
-        if (isPlaying == 1)
+        if (game_state == 1 && isPlaying == 1)
         {
-            temp_score++;
-            os_wait(K_IVL, 100, 0);
-        }
-        else
-        {
-            if (track_num == 1 && temp_score > track1_score)
-            {
-                track1_score = temp_score;
-                temp_score = 0;
-                os_delete_task(4);  //挂起积分
-            }
+            temp_score = 1000;
+            os_wait(K_IVL, 10, 0);  // 适当延时
+		}
+		else
+		{
+			// 游戏结束时保存分数
+			if (game_state == 1 && isPlaying == 0 && temp_score > 0)
+			{
+				if (track_num == 1)
+				{
+						if (temp_score > track1_score)
+								track1_score = temp_score;
+				}
+				else if (track_num == 2)
+				{
+						if (temp_score > track2_score)
+								track2_score = temp_score;
+				}
 
-            if (track_num == 2 && temp_score > track2_score)
-            {
-                track2_score = temp_score;
-                temp_score = 0;
-                os_delete_task(4);  //挂起积分
-            }
-        }
+				temp_score = 0;  // 重置临时分数
+				os_wait(K_IVL, 100, 0);
+			}
+			os_wait(K_IVL, 100, 0);  // 非游戏状态时降低CPU占用
+		}
     }
+   
 }
 
 // 设置任务
