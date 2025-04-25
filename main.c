@@ -12,8 +12,9 @@ sbit KEY4 = P3 ^ 3;
 // 游戏状态变量
 bit game_state = 0;          // 0: 主菜单，1: 游戏进行中
 bit setting_state = 0;       // 0: 主菜单，1: 设置界面
-bit info_state = 0;         // 0: 主菜单，1: 制作信息界面
+bit info_state = 0;          // 0: 主菜单，1: 制作信息界面
 bit isPlaying = 0;           // 0: 没有正在游玩的游戏 1; 正在游戏中
+bit musicPlaying = 0;        // 0: 不播放 1: 播放
 
 volatile unsigned short track1_score = 0;
 volatile unsigned short track2_score = 0;
@@ -40,7 +41,7 @@ void task_init(void) _task_ 0
     os_wait(K_IVL, 50, 0);
 
     //显示菜单教程
-    OLED_ShowString(3, 0, "QG Dash v2.7", 8);
+    OLED_ShowString(3, 0, "QG Dash v2.8", 8);
     OLED_ShowString(3, 2, "Key1:up", 8);
     OLED_ShowString(3, 3, "Key2:down", 8);
     OLED_ShowString(3, 4, "Key3:comfirm", 8);
@@ -55,6 +56,7 @@ void task_init(void) _task_ 0
     //os_create_task(3);  // 游戏任务（优先级3）
     //os_create_task(4);  // 积分任务（优先级4）
     //os_create_task(5);  // 设置任务（优先级5）
+    //os_create_task(6);  // 音乐任务（优先级6）
 
     os_delete_task(0);  // 删除自身
 }
@@ -412,7 +414,7 @@ void task_board(void) _task_ 2
                 OLED_ShowString(3, 0, "Auth:Kyunana", 16);
                 OLED_ShowString(3, 3, "25/4/2025", 8);
                 OLED_ShowString(3, 4, "in AT89C52RC", 8);
-                OLED_ShowString(3, 5, "V2.7", 8);
+                OLED_ShowString(3, 5, "V2.8", 8);
                 OLED_ShowString(3, 6, "press 3 to quit", 16);
                 os_wait(K_IVL, 1000, 0);
             }
@@ -434,6 +436,11 @@ void task_game(void) _task_ 3
             P2 = 0x01;
             OLED_ShowString(3, 3, "Loading...", 16);
             os_create_task(4);  //激活积分
+            os_create_task(6);  //激活播放器
+            //曲目选择
+            if (track_num == 1)
+                Music_Init(Track1);
+            else Music_Init(Track2);
 
             //Track1
             while (game_state == 1 && track_num == 1 && isPlaying == 1)
@@ -441,8 +448,9 @@ void task_game(void) _task_ 3
                 OLED_Clear();
                 OLED_ShowString(3, 3, "Track1 now", 16);
                 OLED_ShowString(3, 6, "Loading...", 8);
-                Music_Init(Track1); 
-                os_wait(K_IVL, 1000, 0);
+                musicPlaying = 1;
+                while(musicPlaying == 1)
+                    os_wait(K_IVL, 100, 0);
                 OLED_Clear();
 
                 OLED_ShowString(3, 0, "game end", 16);
@@ -461,9 +469,9 @@ void task_game(void) _task_ 3
                 OLED_Clear();
                 OLED_ShowString(3, 3, "Track2 now", 16);
                 OLED_ShowString(3, 6, "Loading...", 8);
-                Music_Init(Track2);
-
-                os_wait(K_IVL, 1000, 0);
+                musicPlaying = 1; 
+                while(musicPlaying == 1)
+                    os_wait(K_IVL, 100, 0);
                 OLED_Clear(); 
 
                 OLED_ShowString(3, 0, "game end", 16);
@@ -577,5 +585,18 @@ void task_setting(void) _task_ 5
         {
             os_wait(K_IVL, 100, 0);
         }
+    }
+}
+
+void task_music(void) _task_ 6
+{
+    while (1)
+    {
+        if (musicPlaying)
+        {
+            Music_PlayFullTrack();
+            musicPlaying = 0;
+        }
+        os_wait(K_IVL, 10, 0);
     }
 }

@@ -1,4 +1,4 @@
-C51 COMPILER V9.60.0.0   MUSIC                                                             04/25/2025 16:26:03 PAGE 1   
+C51 COMPILER V9.60.0.0   MUSIC                                                             04/25/2025 18:01:03 PAGE 1   
 
 
 C51 COMPILER V9.60.0.0, COMPILATION OF MODULE MUSIC
@@ -59,56 +59,56 @@ line level    source
   49          //乐谱1
   50          unsigned char code Track1[] =
   51          {
-  52              //音符,时值,track(0:无,1:sky,2:ground)
+  52              //音符,时值
   53          
-  54              H3,4,0,
-C51 COMPILER V9.60.0.0   MUSIC                                                             04/25/2025 16:26:03 PAGE 2   
+  54              H3,4,
+C51 COMPILER V9.60.0.0   MUSIC                                                             04/25/2025 18:01:03 PAGE 2   
 
-  55              H2,2,0,
-  56              H1,4,0,
-  57              H2,2,0,
-  58              H3,3,0,
-  59              H4,1,0,
-  60              H3,2,0,
-  61              H2,4,0,
-  62              P,0,0,
+  55              H2,2,
+  56              H1,4,
+  57              H2,2,
+  58              H3,3,
+  59              H4,1,
+  60              H3,2,
+  61              H2,4,
+  62              P,0,
   63          
-  64              H3,4,0,
-  65              H2,2,0,
-  66              H1,4,0,
-  67              H2,2,0,
-  68              H3,3,0,
-  69              H4,1,0,
-  70              H3,2,0,
-  71              H2,4,0,
-  72              P,0,0,
+  64              H3,4,
+  65              H2,2,
+  66              H1,4,
+  67              H2,2,
+  68              H3,3,
+  69              H4,1,
+  70              H3,2,
+  71              H2,4,
+  72              P,0,
   73          
   74              0xFF  //终止标志
   75          };
   76          
-  77          unsigned char code Track2[] =
+  77           unsigned char code Track2[] =
   78          {
   79              //音符,时值,track(0:无,1:sky,2:ground)
   80          
-  81              H3,4,0,
-  82              H2,2,0,
-  83              H1,4,0,
-  84              H2,2,0,
-  85              H3,3,0,
-  86              H4,1,0,
-  87              H3,2,0,
-  88              H2,4,0,
-  89              P,0,0,
+  81              H3,4,
+  82              H2,2,
+  83              H1,4,
+  84              H2,2,
+  85              H3,3,
+  86              H4,1,
+  87              H3,2,
+  88              H2,4,
+  89              P,0,
   90          
-  91              H3,4,0,
-  92              H2,2,0,
-  93              H1,4,0,
-  94              H2,2,0,
-  95              H3,3,0,
-  96              H4,1,0,
-  97              H3,2,0,
-  98              H2,4,0,
-  99              P,0,0,
+  91              H3,4,
+  92              H2,2,
+  93              H1,4,
+  94              H2,2,
+  95              H3,3,
+  96              H4,1,
+  97              H3,2,
+  98              H2,4,
+  99              P,0,
  100          
  101              0xFF  //终止标志
  102          };
@@ -126,7 +126,7 @@ line level    source
  114          int duration;
  115          unsigned char Timer1h,Timer1l;
  116          volatile unsigned char* currentMusic = NULL;
-C51 COMPILER V9.60.0.0   MUSIC                                                             04/25/2025 16:26:03 PAGE 3   
+C51 COMPILER V9.60.0.0   MUSIC                                                             04/25/2025 18:01:03 PAGE 3   
 
  117          volatile unsigned int noteIndex = 0;
  118          
@@ -155,54 +155,52 @@ line level    source
  141   2          }
  142   1      }
  143          
- 144          
- 145          
- 146          void note_Play()
- 147          {
- 148   1          // 设置定时器初值
- 149   1          TL1 = Timer1h;
- 150   1          TH1 = Timer1l;
- 151   1          TR1 = 1;
- 152   1          Delay(duration);
- 153   1      }
- 154          
- 155          void Music_play()
- 156          {
- 157   1          // 获取音符和时值
- 158   1          if (!currentMusic) 
- 159   1          {
- 160   2              Music_Stop();
- 161   2              return;
- 162   2          }
- 163   1      
- 164   1          // 检查终止标志
- 165   1          if (currentMusic[noteIndex] == 0xFF) 
- 166   1          {
- 167   2              Music_Stop();
- 168   2              return;
- 169   2          }
- 170   1      
- 171   1          FreqSelect = currentMusic[noteIndex];
- 172   1          noteIndex++;
- 173   1          duration = SPEED  * currentMusic[noteIndex] / 4;
- 174   1          noteIndex = noteIndex + 2;
- 175   1          Timer1h = FreqTable[FreqSelect] / 256;
- 176   1          Timer1l = FreqTable[FreqSelect] % 256;
- 177   1          note_Play();
- 178   1      }
-C51 COMPILER V9.60.0.0   MUSIC                                                             04/25/2025 16:26:03 PAGE 4   
+ 144          void Music_PlayFullTrack()
+ 145          {
+ 146   1          if (!currentMusic)
+ 147   1          {
+ 148   2              Music_Stop();
+ 149   2              return;
+ 150   2          }
+ 151   1      
+ 152   1          while (1)
+ 153   1          {
+ 154   2              // 检查终止标志
+ 155   2              if (currentMusic[noteIndex] == 0xFF)
+ 156   2              {
+ 157   3                  Music_Stop();
+ 158   3                  return;
+ 159   3              }
+ 160   2      
+ 161   2              // 播放当前音符
+ 162   2              FreqSelect = currentMusic[noteIndex];
+ 163   2              noteIndex++;
+ 164   2              duration = SPEED * currentMusic[noteIndex] / 4;
+ 165   2              noteIndex++;
+ 166   2              Timer1h = FreqTable[FreqSelect] / 256;
+ 167   2              Timer1l = FreqTable[FreqSelect] % 256;
+ 168   2      
+ 169   2              TR1 = 1;
+ 170   2              Delay(duration);
+ 171   2              TR1 = 0;
+ 172   2      
+ 173   2              // 短暂停顿防止音符粘连
+ 174   2              Delay(10);
+ 175   2          }
+ 176   1      }
+ 177          
+ 178          void Music_Stop(void) 
+C51 COMPILER V9.60.0.0   MUSIC                                                             04/25/2025 18:01:03 PAGE 4   
 
- 179          
- 180          void Music_Stop(void) 
- 181          {
- 182   1          TR1 = 0;
- 183   1          Buzzer = 0;
- 184   1      }
+ 179          {
+ 180   1          TR1 = 0;
+ 181   1          Buzzer = 0;
+ 182   1      }
 
 
 MODULE INFORMATION:   STATIC OVERLAYABLE
-   CODE SIZE        =    308    ----
-   CONSTANT SIZE    =    110    ----
+   CODE SIZE        =    306    ----
+   CONSTANT SIZE    =     74    ----
    XDATA SIZE       =     84    ----
    PDATA SIZE       =   ----    ----
    DATA SIZE        =   ----    ----
