@@ -9,6 +9,7 @@
 // 蜂鸣器端口定义
 sbit Buzzer = P2 ^ 5;
 unsigned char code Track1[];
+unsigned char code Track2[];
 
 // 播放控制接口
 void Music_Init(unsigned char* musicData);

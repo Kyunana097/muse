@@ -12,26 +12,6 @@
 //[6]0 1 2 3 ... 127	
 //[7]0 1 2 3 ... 127 
 
-
-
-/***********************Delay****************************************/
-void Delay_50ms(unsigned int Del_50ms)
-{
-	unsigned int m;
-	for(;Del_50ms>0;Del_50ms--)
-		for(m=6245;m>0;m--);
-}
-
-void Delay_1ms(unsigned int Del_1ms)
-{
-	unsigned char j;
-	while(Del_1ms--)
-	{	
-		for(j=0;j<123;j++);
-	}
-}
-
-
 /**********************************************
 //IIC Start I2C发送起始
 **********************************************/
@@ -180,19 +160,6 @@ void OLED_Clear(void)
 	} //更新显示
 }
 
-//点亮函数 全写为1 整个屏幕点亮
-void OLED_On(void)  
-{  
-	u8 i,n;		    
-	for(i=0;i<8;i++)  
-	{  
-		OLED_WR_Byte (0xb0+i,OLED_CMD);    //设置页地址（0~7）
-		OLED_WR_Byte (0x00,OLED_CMD);      //设置显示位置—列低地址
-		OLED_WR_Byte (0x10,OLED_CMD);      //设置显示位置—列高地址   
-		for(n=0;n<128;n++)OLED_WR_Byte(1,OLED_DATA); 
-	} //更新显示
-}
-
 //在指定位置显示一个字符,包括部分字符
 //x:0~127
 //y:0~63
@@ -266,23 +233,31 @@ void OLED_ShowString(u8 x,u8 y,u8 *chr,u8 Char_Size)
 	}
 }
 
-/***********功能描述：显示显示BMP图片128×64起始点坐标(x,y),x的范围0～127，y为页的范围0～7*****************/
-void OLED_DrawBMP(unsigned char x0, unsigned char y0,unsigned char x1, unsigned char y1,unsigned char BMP[])
-{ 	
- unsigned int j=0;
- unsigned char x,y;
-  
-  if(y1%8==0) y=y1/8;      
-  else y=y1/8+1;
-	for(y=y0;y<y1;y++)
-	{
-		OLED_Set_Pos(x0,y);
-    for(x=x0;x<x1;x++)
-	    {      
-	    	OLED_WR_Byte(BMP[j++],OLED_DATA);	    	
-	    }
-	}
-} 
+/**
+ * @brief 显示 0~1000 的数值（自动计算位数，最小内存）
+ * @param x: X 坐标（0~127）
+ * @param y: Y 坐标（0~7）
+ * @param value: 要显示的值（0~1000）
+ * @param size: 字体大小（8 或 16）
+ */
+void OLED_ShowValue(u8 x, u8 y, u32 value, u8 size) 
+{
+	u8 i = 0;
+	char buffer[5]; // 存储 "0"~"1000"（4 位 + '\0'）
+
+	// 将数字转换为字符串
+	buffer[0] = (value / 1000) + '0';       // 千位（0 或 1）
+	buffer[1] = ((value / 100) % 10) + '0'; // 百位
+	buffer[2] = ((value / 10) % 10) + '0';  // 十位
+	buffer[3] = (value % 10) + '0';         // 个位
+	buffer[4] = '\0';                       // 字符串结束符
+
+	// 跳过前导零（可选，如 "0100" → "100"）
+	while (i < 3 && buffer[i] == '0') i++;
+
+	// 显示字符串
+	OLED_ShowString(x, y, (u8*)&buffer[i], size);
+}
 
 //初始化SSD1306					    
 void OLED_Init(void)
@@ -323,24 +298,3 @@ void OLED_Init(void)
 	
 	OLED_WR_Byte(0xAF,OLED_CMD);//--turn on oled panel
 }  
-
-//水平滚动
-void OLED_roll(unsigned char track, unsigned char speed)
-{
-	Write_IIC_Command(0x2D);//向右(0x2C)/向左(0x2D)滚动一列
-	Write_IIC_Command(0x00);//dummy byte(空比特、虚拟字节),暂未发现其指令作用
-	if (track == 1)
-	{
-		Write_IIC_Command(0x00);//设置滚动起始页地址
-		Write_IIC_Command(0x01);//虚拟字节(设置为0x01)
-		Write_IIC_Command(0x07);//设置滚动结束页  
-	}
-	else 
-	{
-		Write_IIC_Command(0x03);//设置滚动起始页地址
-		Write_IIC_Command(speed-1);//设置滚动速度(0x00~0x07数值越小速度越慢)
-		Write_IIC_Command(0x05);//设置滚动结束页  
-	} 
-	Write_IIC_Command(0x00);//设置起始列地址
-	Write_IIC_Command(0x7F);//设置结束列地址
-}

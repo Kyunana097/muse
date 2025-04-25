@@ -1,5 +1,4 @@
 #include <REGX52.H>
-#include "Headers/bmp.h"
 #include "Headers/oled.h"
 #include "Headers/oledfont.h"
 #include "Headers/RTX51TNY.H"
@@ -10,31 +9,42 @@ sbit KEY2 = P3 ^ 0;
 sbit KEY3 = P3 ^ 2;
 sbit KEY4 = P3 ^ 3;
 
-
-
 // 游戏状态变量
 bit game_state = 0;          // 0: 主菜单，1: 游戏进行中
 bit setting_state = 0;       // 0: 主菜单，1: 设置界面
-bit score_state = 0;         // 0: 主菜单，1: 最高分界面
-volatile unsigned char board_num = 1;           // 1: start 2: setting 3: score
+bit info_state = 0;         // 0: 主菜单，1: 制作信息界面
+bit isPlaying = 0;           // 0: 没有正在游玩的游戏 1; 正在游戏中
+
+volatile unsigned char track1_score = 0;
+volatile unsigned char track2_score = 0;
+volatile unsigned char temp_score = 0;
+volatile unsigned char track_num = 1;           // 1: 第一关，2: 第二关
+volatile unsigned char board_num = 1;           // 1: start 2: setting 3: info
 volatile unsigned char x_position = 119;        //音符起始位置 119+8=127
 volatile unsigned char speed = 4;               //音符移动速度 1-8
 
+//即将转移至包装的数据
+bit KEY4_pressed = 0;        // 判定状态
 // 将 speed 转换为字符串
 char speed_str[2];  // 1位数字 + '\0'
-unsigned char temp ;
-bit KEY4_pressed = 0;        // 判定状态
-unsigned char hit_time = 0;
-
-unsigned char current_track = 1;//音符列位置 1-2
+volatile unsigned char temp ;
+volatile unsigned char hit_time = 0;
+volatile unsigned char current_track = 1;//音符列位置 1-2
 
 // 初始化任务
 void task_init(void) _task_ 0
 {
     P2 = 0xFF;
     OLED_Init();
-    OLED_DrawBMP(0, 0, 128, 8, BMP1);//logo
+    OLED_Clear();
     os_wait(K_IVL, 50, 0);
+
+    //显示菜单教程
+    OLED_ShowString(3, 0, "QG Dash v1.0", 8);
+    OLED_ShowString(3, 1, "1:up 2:down", 8);
+    OLED_ShowString(3, 2, "3:comfirm", 8);
+    
+    os_wait(K_IVL, 1000, 0);
 
     os_create_task(1);  // 按键任务（优先级1）
     os_create_task(2);  // 菜单任务（优先级2）
@@ -45,7 +55,7 @@ void task_init(void) _task_ 0
     os_delete_task(0);  // 删除自身
 }
 
-// 按键任务
+// 按键与判定任务
 void task_key(void) _task_ 1
 {
     while(1)
@@ -55,7 +65,7 @@ void task_key(void) _task_ 1
         * key2 = down
         * key3 = comfirm
         */
-        if (game_state == 0 && setting_state == 0 && score_state == 0)
+        if (game_state == 0 && setting_state == 0 && info_state == 0)
         {
             if (KEY1 == 0)
             {
@@ -94,9 +104,8 @@ void task_key(void) _task_ 1
                     {
                     //game选项下按下确认按键
                     case 1:
+                        //进入游戏二级菜单
                         game_state = 1;
-                        os_delete_task(2);  //挂起菜单
-                        os_create_task(3);  //启动游戏任务（优先级3）
                         break;
                 
                     //setting选项下按下确认按键
@@ -106,11 +115,10 @@ void task_key(void) _task_ 1
                         os_create_task(5);  //启动设置任务（优先级5）
                         break;
 
-                    //score选项下按下确认按钮
+                    //info选项下按下确认按钮
                     case 3:
-                        score_state = 1;
-                        os_delete_task(2);  //挂起菜单
-                        os_create_task(4);  //启动积分任务（优先级4）
+                        //进入info二级菜单
+                        info_state = 1;
                         break;
                     }
                     while (KEY3 == 0) os_wait(K_IVL, 1, 0);
@@ -119,15 +127,99 @@ void task_key(void) _task_ 1
             }
             os_wait(K_IVL, 10, 0);      //释放内存
         }
+        /**游戏二级菜单中
+         * key 1 = up
+         * key 2 = down
+         * key 3 = comfirm
+         * key 4 = back
+         */
+        if (game_state == 1 && isPlaying == 0)
+        {
+            if (KEY1 == 0)
+            {
+                os_wait(K_IVL, 3, 0); // 消抖
+                if (KEY1 == 0)         //确认按钮按下
+                {
+                    os_wait(K_IVL, 10, 0); // 消抖
+                    track_num--;       //向上
+                    if (track_num < 1)
+                        track_num = 2; //越界循环
+                    while (KEY1 == 0) os_wait(K_IVL, 1, 0); // 等待释放
+                }
+            }
+
+            if (KEY2 == 0)
+            {
+                os_wait(K_IVL, 3, 0); // 消抖
+                if (KEY2 == 0)         //确认按钮按下
+                {
+                    os_wait(K_IVL, 10, 0); // 消抖
+                    track_num++;        //向下
+                    if (track_num > 2)
+                        track_num = 1;//越界循环
+                    while (KEY2 == 0) os_wait(K_IVL, 1, 0);// 等待释放
+                }
+
+            }
+
+            if (KEY3 == 0)
+            {
+                os_wait(K_IVL, 3, 0); // 消抖
+                if (KEY3 == 0)         //等待按键释放
+                {
+                    os_wait(K_IVL, 10, 0); // 消抖  
+                    //激活当前停留的轨道
+                    isPlaying = 1;
+                    while (KEY3 == 0) os_wait(K_IVL, 1, 0);
+                }
+                os_delete_task(2);  //挂起菜单
+                os_create_task(3);  //启动游戏任务（优先级3）
+            }
+
+            //返回上级菜单
+            if (KEY4 == 0)
+            {
+                os_wait(K_IVL, 3, 0); // 消抖
+                if (KEY4 == 0)
+                {
+                    os_wait(K_IVL, 10, 0); // 消抖  
+                    while (KEY4 == 0) os_wait(K_IVL, 1, 0);
+                }
+                game_state = 0;
+                os_wait(K_IVL, 3, 0);
+            }
+            os_wait(K_IVL, 10, 0);      //释放内存
+        } 
+
+        /**制作信息二级菜单中
+         * key 3 = quit
+         */
+        if (info_state == 1)
+        {
+            //退出二级菜单
+            if (KEY3 == 0)
+            {
+                os_wait(K_IVL, 3, 0); // 消抖
+                if (KEY3 == 0);        
+                {
+                    os_wait(K_IVL, 10, 0); // 消抖  
+                    while (KEY3 == 0) os_wait(K_IVL, 1, 0);
+                }
+                info_state = 0;
+                OLED_Clear();
+                os_wait(K_IVL, 100, 0);
+            }
+        }
 
         /*游戏中
         * key1 = sky
         * key2 = ground
         * key3 = quit
-        * key4 = pause
+        * key4 = pause（暂时不写）
         */
-        if (game_state == 1)
+        if (game_state == 1 && isPlaying == 1)
         {
+
             //退出游戏
             if (KEY3 == 0)
             {
@@ -137,15 +229,18 @@ void task_key(void) _task_ 1
                     os_wait(K_IVL, 10, 0); // 消抖  
                     while (KEY3 == 0) os_wait(K_IVL, 1, 0);
                 }
-                game_state = 0;
-                os_wait(K_IVL, 3, 0);
+                OLED_Clear();
+                isPlaying = 0;
+                os_wait(K_IVL, 100, 0);
             }
+
         }
 
         /*设置中
         * key1 = speed plus
         * key2 = speed less
-        * key3 = comfirm & backward
+        * key3 = comfirm & quit
+        * key4 = tap
         */
         if (setting_state == 1)
         {
@@ -209,24 +304,7 @@ void task_key(void) _task_ 1
             os_wait(K_IVL, 10, 0);      //释放内存
             
         }
-        /*计分板中
-        * key3 = back
-        */
-        if (score_state == 1)
-        {
-            //退出计分板
-            if (KEY3 == 0)
-            {
-                os_wait(K_IVL, 3, 0); // 消抖
-                if (KEY3 == 0);        
-                {
-                    os_wait(K_IVL, 10, 0); // 消抖  
-                    while (KEY3 == 0) os_wait(K_IVL, 1, 0);
-                }
-                score_state = 0;
-                os_wait(K_IVL, 3, 0);
-            }
-        }
+       
     }
 }
 
@@ -238,11 +316,12 @@ void task_board(void) _task_ 2
     {  
         os_wait(K_IVL, 10, 0);
         P2 = 0xAA;
-        while (game_state == 0 && score_state == 0 && setting_state == 0)
+        //主菜单
+        while (game_state == 0 && setting_state == 0 && info_state == 0)
         {
             OLED_ShowString(25, 0, "Start", 16);
             OLED_ShowString(25, 3, "Setting", 16);
-            OLED_ShowString(25, 6, "Score", 16);
+            OLED_ShowString(25, 6, "Info", 16);
             switch (board_num)
             {
             case 1: 
@@ -265,6 +344,51 @@ void task_board(void) _task_ 2
             }
             os_wait(K_IVL, 10, 0);  
         }
+
+        //游戏二级菜单
+        if (game_state == 1 && isPlaying == 0)
+        {
+            OLED_Clear();
+            OLED_ShowString(3, 0, "1:up 2:down", 16);
+            OLED_ShowString(3, 3, "3:comfirm 4:back", 8);
+            OLED_ShowString(3, 6, "Loading...", 16);
+            os_wait(K_IVL, 1000, 0);
+            while (game_state == 1 && isPlaying == 0 )
+            {
+                OLED_Clear();
+                OLED_ShowString(25, 0, "Track 1", 16);
+                OLED_ShowString(25, 3, "Track 2", 16);
+                OLED_ShowString(3, 6, "MAX:", 16);
+                switch (track_num)
+                {
+                case 1:
+                    OLED_ShowString(3, 0, ">>", 16);
+                    OLED_ShowString(3, 3, "  ", 16);
+                    OLED_ShowValue(25, 6, track1_score, 16);
+                    break;
+
+                case 2:
+                    OLED_ShowString(3, 0, "  ", 16);
+                    OLED_ShowString(3, 3, ">>", 16);
+                    OLED_ShowValue(25, 6, track2_score, 16);
+                    break;
+                }
+            }
+        }
+        
+        //制作信息二级菜单
+        if (info_state == 1)
+        {
+            OLED_Clear();
+            while (info_state == 1)
+            {
+                OLED_ShowString(3, 0, "Auth:Kyunana", 16);
+                OLED_ShowString(3, 3, "25/4/2025", 16);
+                OLED_ShowString(3, 6, "press 3 to quit", 16);
+                os_wait(K_IVL, 1000, 0);
+            }
+            os_wait(K_IVL, 10, 0);
+        }
     }
 }
 
@@ -275,19 +399,47 @@ void task_game(void) _task_ 3
     {
         if (game_state == 1)
         {
+            isPlaying = 1;
             OLED_Clear();
             P2 = 0x01;
-            Music_Init(Track1); 
-            //暂未添加游戏逻辑
-            while (game_state == 1)
-            {   
-                Music_play();
-                OLED_ShowString(3, 3, "gamestate now", 16);
+            OLED_ShowString(3, 3, "gamestate now", 16);
+            os_create_task(4);  //激活积分
+
+            //Track1
+            while (game_state == 1 && track_num == 1)
+            {
+                OLED_Clear();
+                OLED_ShowString(3, 3, "Track1 now", 16);
+                Music_Init(Track1); 
+
+                os_wait(K_IVL, 1000, 0);
+                OLED_Clear();
+                OLED_ShowString(3, 0, "game end", 16);
+                OLED_ShowString(3, 3, "your score", 16);
+                OLED_ShowValue(3, 6, track1_score, 16);
             }
+
+            //Track2
+            while (game_state == 1 && track_num == 2)
+            {
+                OLED_Clear();
+                OLED_ShowString(3, 3, "Track2 now", 16);
+                Music_Init(Track2);
+
+                os_wait(K_IVL, 1000, 0);
+                OLED_Clear();
+                OLED_ShowString(3, 0, "game end", 16);
+                OLED_ShowString(3, 3, "your score", 16);
+                OLED_ShowValue(3, 6, track2_score, 16);
+            }
+
+            //此处添加玩家游戏后结算选择界面（回到主菜单或继续选歌）
+
             //game_state == 0后 进入退出步骤
             OLED_Clear();
             os_wait(K_IVL, 100, 0);
             game_state = 0;
+
             os_create_task(2);  //激活菜单
             os_delete_task(3);  //挂起游戏
         }
@@ -301,31 +453,28 @@ void task_game(void) _task_ 3
 // 积分任务
 void task_score(void) _task_ 4
 {
-    
-    while (1)
+    while (game_state == 1)
     {
-        if (score_state == 1)
+        if (isPlaying == 1)
         {
-            OLED_Init(); 
-            OLED_Clear();
-            P2 = 0x02;
-            // 添加积分显示逻辑
-            while (score_state == 1)
-            {
-                OLED_ShowString(3, 3, "track1 = 100000", 16); 
-                OLED_ShowString(3, 6, "track2 = 100000", 16);
-                
-                os_wait(K_IVL, 20, 0);
-            }
-            //score_state == 0后 进入退出步骤
+            temp_score++;
             os_wait(K_IVL, 100, 0);
-            OLED_Clear();
-            os_create_task(2);  //激活菜单
-            os_delete_task(4);  //挂起积分
         }
         else
         {
-            os_wait(K_IVL, 100, 0);
+            if (track_num == 1 && temp_score > track1_score)
+            {
+                track1_score = temp_score;
+                temp_score = 0;
+                os_delete_task(4);  //挂起积分
+            }
+
+            if (track_num == 2 && temp_score > track2_score)
+            {
+                track2_score = temp_score;
+                temp_score = 0;
+                os_delete_task(4);  //挂起积分
+            }
         }
     }
 }
