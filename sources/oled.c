@@ -105,24 +105,6 @@ void OLED_WR_Byte(unsigned dat,unsigned cmd)
 	}
 }
 
-/********************************************
-// fill_Picture 128位
-********************************************/
-void fill_picture(unsigned char fill_Data)
-{
-	unsigned char m,n;
-	for(m=0;m<8;m++)
-	{
-		OLED_WR_Byte(0xb0+m,0);		//page0-page1
-		OLED_WR_Byte(0x00,0);		//low column start address
-		OLED_WR_Byte(0x10,0);		//high column start address
-		for(n=0;n<128;n++)
-			{
-				OLED_WR_Byte(fill_Data,1);
-			}
-	}
-}
-
 
 //坐标设置
 void OLED_Set_Pos(unsigned char x, unsigned char y) 
@@ -130,22 +112,6 @@ void OLED_Set_Pos(unsigned char x, unsigned char y)
 	OLED_WR_Byte(((x&0xf0)>>4)|0x10,OLED_CMD);
 	OLED_WR_Byte((x&0x0f),OLED_CMD); 
 } 
-
-//开启OLED显示    
-void OLED_Display_On(void)
-{
-	OLED_WR_Byte(0X8D,OLED_CMD);  //SET DCDC命令
-	OLED_WR_Byte(0X14,OLED_CMD);  //DCDC ON
-	OLED_WR_Byte(0XAF,OLED_CMD);  //DISPLAY ON
-}
-
-//关闭OLED显示     
-void OLED_Display_Off(void)
-{
-	OLED_WR_Byte(0X8D,OLED_CMD);  //SET DCDC命令
-	OLED_WR_Byte(0X10,OLED_CMD);  //DCDC OFF
-	OLED_WR_Byte(0XAE,OLED_CMD);  //DISPLAY OFF
-}
 
 //清屏函数,清完屏,整个屏幕是黑色的!和没点亮一样!!!	  
 void OLED_Clear(void)  
@@ -185,41 +151,7 @@ void OLED_ShowChar(u8 x,u8 y,u8 chr,u8 Char_Size)
 			for(i=0;i<6;i++)
 			OLED_WR_Byte(F6x8[c][i],OLED_DATA);
 		}
-}
-
-//m^n函数
-u32 oled_pow(u8 m,u8 n)
-{
-	u32 result=1;	 
-	while(n--)result*=m;    
-	return result;
-}			
-
-//显示2个数字
-//x,y :起点坐标	 
-//len :数字的位数
-//size:字体大小
-//mode:模式	0,填充模式;1,叠加模式
-//num:数值(0~4294967295);	 		  
-void OLED_ShowNum(u8 x,u8 y,u32 num,u8 len,u8 size2)
-{         	
-	u8 t,temp;
-	u8 enshow=0;						   
-	for(t=0;t<len;t++)
-	{
-		temp=(num/oled_pow(10,len-t-1))%10;
-		if(enshow==0&&t<(len-1))
-		{
-			if(temp==0)
-			{
-				OLED_ShowChar(x+(size2/2)*t,y,' ',size2);
-				continue;
-			}else enshow=1; 
-		 	 
-		}
-	 	OLED_ShowChar(x+(size2/2)*t,y,temp+'0',size2); 
-	}
-} 
+}		
 
 //显示一个字符号串
 void OLED_ShowString(u8 x,u8 y,u8 *chr,u8 Char_Size)

@@ -46,16 +46,12 @@ sbit OLED_SDIN=P1^1;//D1（MOSI） 数据
 //-----------------OLED端口定义----------------
 
 //OLED控制用函数
-void OLED_WR_Byte(unsigned dat,unsigned cmd);  
-void OLED_Display_On(void);
-void OLED_Display_Off(void);	   							   		    
+void OLED_WR_Byte(unsigned dat,unsigned cmd);    							   		    
 void OLED_Init(void);
 void OLED_Clear(void);
 void OLED_ShowChar(u8 x,u8 y,u8 chr,u8 Char_Size);
-void OLED_ShowNum(u8 x,u8 y,u32 num,u8 len,u8 size);
 void OLED_ShowString(u8 x,u8 y, u8 *p,u8 Char_Size);	 
 void OLED_Set_Pos(unsigned char x, unsigned char y);
-void fill_picture(unsigned char fill_Data);
 void IIC_Start();
 void IIC_Stop();
 void Write_IIC_Command(unsigned char IIC_Command);

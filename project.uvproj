@@ -382,16 +382,6 @@
               <FilePath>.\main.c</FilePath>
             </File>
             <File>
-              <FileName>oled.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\sources\oled.c</FilePath>
-            </File>
-            <File>
-              <FileName>oled.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Headers\oled.h</FilePath>
-            </File>
-            <File>
               <FileName>oledfont.h</FileName>
               <FileType>5</FileType>
               <FilePath>.\Headers\oledfont.h</FilePath>
@@ -425,6 +415,16 @@
               <FileName>Delay.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\sources\Delay.c</FilePath>
+            </File>
+            <File>
+              <FileName>oled.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\sources\oled.c</FilePath>
+            </File>
+            <File>
+              <FileName>oled.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Headers\oled.h</FilePath>
             </File>
           </Files>
         </Group>
