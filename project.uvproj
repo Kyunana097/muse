@@ -382,9 +382,74 @@
               <FilePath>.\main.c</FilePath>
             </File>
             <File>
+              <FileName>AT24C02.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\sources\AT24C02.c</FilePath>
+            </File>
+            <File>
+              <FileName>Delay.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\sources\Delay.c</FilePath>
+            </File>
+            <File>
+              <FileName>IIC.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\sources\IIC.c</FilePath>
+            </File>
+            <File>
+              <FileName>key.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\sources\key.c</FilePath>
+            </File>
+            <File>
+              <FileName>music.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\sources\music.c</FilePath>
+            </File>
+            <File>
+              <FileName>note.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\sources\note.c</FilePath>
+            </File>
+            <File>
               <FileName>oled.c</FileName>
               <FileType>1</FileType>
               <FilePath>.\sources\oled.c</FilePath>
+            </File>
+            <File>
+              <FileName>oledfont.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\sources\oledfont.c</FilePath>
+            </File>
+            <File>
+              <FileName>AT24C02.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Headers\AT24C02.h</FilePath>
+            </File>
+            <File>
+              <FileName>Delay.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Headers\Delay.h</FilePath>
+            </File>
+            <File>
+              <FileName>IIC.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Headers\IIC.h</FilePath>
+            </File>
+            <File>
+              <FileName>key.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Headers\key.h</FilePath>
+            </File>
+            <File>
+              <FileName>music.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Headers\music.h</FilePath>
+            </File>
+            <File>
+              <FileName>note.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\Headers\note.h</FilePath>
             </File>
             <File>
               <FileName>oled.h</FileName>
@@ -397,34 +462,9 @@
               <FilePath>.\Headers\oledfont.h</FilePath>
             </File>
             <File>
-              <FileName>bmp.h</FileName>
+              <FileName>RTX51TNY.H</FileName>
               <FileType>5</FileType>
-              <FilePath>.\Headers\bmp.h</FilePath>
-            </File>
-            <File>
-              <FileName>oledfont.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\sources\oledfont.c</FilePath>
-            </File>
-            <File>
-              <FileName>music.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\sources\music.c</FilePath>
-            </File>
-            <File>
-              <FileName>music.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Headers\music.h</FilePath>
-            </File>
-            <File>
-              <FileName>Delay.h</FileName>
-              <FileType>5</FileType>
-              <FilePath>.\Headers\Delay.h</FilePath>
-            </File>
-            <File>
-              <FileName>Delay.c</FileName>
-              <FileType>1</FileType>
-              <FilePath>.\sources\Delay.c</FilePath>
+              <FilePath>.\Headers\RTX51TNY.H</FilePath>
             </File>
           </Files>
         </Group>

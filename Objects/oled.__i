@@ -1,1 +1,0 @@
-"sources\oled.c" LARGE OPTIMIZE (8,SPEED) BROWSE INCDIR(.\Headers;.\sources) DEBUG OBJECTEXTEND PRINT(.\Listings\oled.lst) OBJECT(.\Objects\oled.obj)

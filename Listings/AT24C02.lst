@@ -1,0 +1,146 @@
+C51 COMPILER V9.60.0.0   AT24C02                                                           04/29/2025 11:26:33 PAGE 1   
+
+
+C51 COMPILER V9.60.0.0, COMPILATION OF MODULE AT24C02
+OBJECT MODULE PLACED IN .\Objects\AT24C02.obj
+COMPILER INVOKED BY: D:\keil\C51\BIN\C51.EXE sources\AT24C02.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\Headers;.\sources
+                    -) DEBUG OBJECTEXTEND PRINT(.\Listings\AT24C02.lst) OBJECT(.\Objects\AT24C02.obj)
+
+line level    source
+
+   1          #include "AT24C02.h"
+   2          #include "IIC.h"
+   3          
+   4          unsigned char AckFlag = 0; // 应答标志
+   5          
+   6          // 全局变量定义
+   7          unsigned char AT24C02_WriteData[4] = { 0 }; // 默认初始化为0
+   8          unsigned char AT24C02_ReadData[4] = { 0 };  // 默认初始化为0
+   9          
+  10          
+  11          // 将一个16位整数拆分为4个字节并存储到EEPROM
+  12          void AT24C02_WriteValue(unsigned char addr, unsigned short value) {
+  13   1          // 将16位整数拆分为4个字节
+  14   1          AT24C02_WriteData[0] = (value >> 24) & 0xFF; // 高字节
+  15   1          AT24C02_WriteData[1] = (value >> 16) & 0xFF;
+  16   1          AT24C02_WriteData[2] = (value >> 8) & 0xFF;
+  17   1          AT24C02_WriteData[3] = value & 0xFF;         // 低字节
+  18   1      
+  19   1          // 调用原写入函数
+  20   1          AT24C02WriteBytes(addr);
+  21   1      }
+  22          
+  23          // 从EEPROM读取4个字节并还原为一个16位整数
+  24          unsigned short AT24C02_ReadValue(unsigned char addr) {
+  25   1          unsigned short value = 0;
+  26   1      
+  27   1          // 调用原读取函数
+  28   1          AT24C02ReadBytes(addr);
+  29   1      
+  30   1          // 将4个字节还原为16位整数
+  31   1          value = (AT24C02_ReadData[0] << 24) | (AT24C02_ReadData[1] << 16) |
+  32   1              (AT24C02_ReadData[2] << 8) | AT24C02_ReadData[3];
+  33   1      
+  34   1          return value;
+  35   1      }
+  36          
+  37          void AT24C02WriteBytes(unsigned char addr) {
+  38   1          unsigned char i;
+  39   1          I2cStart();
+  40   1          I2cSendByte(AT24C02ADDR + 0); // 写命令
+  41   1          if (I2cReadACK() == 0) {
+  42   2              AckFlag = 0; // 应答成功
+  43   2          }
+  44   1          else {
+  45   2              AckFlag = 1; // 应答失败
+  46   2              I2cStop();
+  47   2              return;
+  48   2          }
+  49   1      
+  50   1          I2cSendByte(addr); // 发送起始地址
+  51   1          if (I2cReadACK() == 0) {
+  52   2              AckFlag = 0; // 应答成功
+  53   2          }
+  54   1          else {
+C51 COMPILER V9.60.0.0   AT24C02                                                           04/29/2025 11:26:33 PAGE 2   
+
+  55   2              AckFlag = 1; // 应答失败
+  56   2              I2cStop();
+  57   2              return;
+  58   2          }
+  59   1      
+  60   1          for (i = 0; i < 4; i++) {
+  61   2              I2cSendByte(AT24C02_WriteData[i]); // 发送数据
+  62   2              if (I2cReadACK() == 0) {
+  63   3                  AckFlag = 0; // 应答成功
+  64   3              }
+  65   2              else {
+  66   3                  AckFlag = 1; // 应答失败
+  67   3                  break;
+  68   3              }
+  69   2          }
+  70   1          I2cStop();
+  71   1      }
+  72          
+  73          void AT24C02ReadBytes(unsigned char addr)
+  74          {
+  75   1          unsigned char i;
+  76   1          I2cStart();
+  77   1          I2cSendByte(AT24C02ADDR + 0); // 写命令
+  78   1          if (I2cReadACK() == 0) {
+  79   2              AckFlag = 0; // 应答成功
+  80   2          }
+  81   1          else {
+  82   2              AckFlag = 1; // 应答失败
+  83   2              I2cStop();
+  84   2              return;
+  85   2          }
+  86   1      
+  87   1          I2cSendByte(addr); // 发送起始地址
+  88   1          if (I2cReadACK() == 0) {
+  89   2              AckFlag = 0; // 应答成功
+  90   2          }
+  91   1          else {
+  92   2              AckFlag = 1; // 应答失败
+  93   2              I2cStop();
+  94   2              return;
+  95   2          }
+  96   1      
+  97   1          I2cStart();
+  98   1          I2cSendByte(AT24C02ADDR + 1); // 读命令
+  99   1          if (I2cReadACK() == 0) {
+ 100   2              AckFlag = 0; // 应答成功
+ 101   2          }
+ 102   1          else {
+ 103   2              AckFlag = 1; // 应答失败
+ 104   2              I2cStop();
+ 105   2              return;
+ 106   2          }
+ 107   1      
+ 108   1          for (i = 0; i < 4; i++) {
+ 109   2              AT24C02_ReadData[i] = I2cReadByte(); // 读取数据
+ 110   2              if (i < 3) {
+ 111   3                  I2cSendAck(0); // 发送应答
+ 112   3              }
+ 113   2              else {
+ 114   3                  I2cSendAck(1); // 发送非应答
+ 115   3              }
+ 116   2          }
+C51 COMPILER V9.60.0.0   AT24C02                                                           04/29/2025 11:26:33 PAGE 3   
+
+ 117   1          I2cStop();
+ 118   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =    364    ----
+   CONSTANT SIZE    =   ----    ----
+   XDATA SIZE       =      9       4
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =   ----    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)

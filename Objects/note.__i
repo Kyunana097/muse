@@ -1,1 +1,0 @@
-"sources\note.c" OPTIMIZE (8,SPEED) BROWSE INCDIR(.\Headers;.\sources) DEBUG OBJECTEXTEND PRINT(.\Listings\note.lst) TABS (2) OBJECT(.\Objects\note.obj)

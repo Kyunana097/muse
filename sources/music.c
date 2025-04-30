@@ -5,101 +5,8 @@
 //播放速度，值为四分音符的时长(ms)   120 / 60 = 2 --> 1 / 2 * 1e3 = 500 ms
 // 																 100 / 60     --> 60 / 100 * 1e3 = 600ms
 #define SPEED	300
+/*
 
-//音符与索引对应表，P：休止符，L：低音，M：中音，H：高音，下划线：升半音符号#
-#define P	0
-#define L1	1
-#define L1_	2
-#define L2	3
-#define L2_	4
-#define L3	5
-#define L4	6
-#define L4_	7
-#define L5	8
-#define L5_	9
-#define L6	10
-#define L6_	11
-#define L7	12
-#define M1	13
-#define M1_	14
-#define M2	15
-#define M2_	16
-#define M3	17
-#define M4	18
-#define M4_	19
-#define M5	20
-#define M5_	21
-#define M6	22
-#define M6_	23
-#define M7	24
-#define H1	25
-#define H1_	26
-#define H2	27
-#define H2_	28
-#define H3	29
-#define H4	30
-#define H4_	31
-#define H5	32
-#define H5_	33
-#define H6	34
-#define H6_	35
-#define H7	36
-
-
-//乐谱1
-unsigned char code Track1[] =
-{
-    //音符,时值,track(0:无,1:sky,2:ground)
-
-    H3,4,0,
-    H2,2,0,
-    H1,4,0,
-    H2,2,0,
-    H3,3,0,
-    H4,1,0,
-    H3,2,0,
-    H2,4,0,
-    P,0,0,
-
-    H3,4,0,
-    H2,2,0,
-    H1,4,0,
-    H2,2,0,
-    H3,3,0,
-    H4,1,0,
-    H3,2,0,
-    H2,4,0,
-    P,0,0,
-
-    0xFF	//终止标志
-};
-
-unsigned char code Track2[] =
-{
-    //音符,时值,track(0:无,1:sky,2:ground)
-
-    H3,4,0,
-    H2,2,0,
-    H1,4,0,
-    H2,2,0,
-    H3,3,0,
-    H4,1,0,
-    H3,2,0,
-    H2,4,0,
-    P,0,0,
-
-    H3,4,0,
-    H2,2,0,
-    H1,4,0,
-    H2,2,0,
-    H3,3,0,
-    H4,1,0,
-    H3,2,0,
-    H2,4,0,
-    P,0,0,
-
-    0xFF	//终止标志
-};
 
 unsigned int FreqTable[] = {
     0,
@@ -141,40 +48,38 @@ void Timer1_Routine() interrupt 3
     }
 }
 
-
-
-void note_Play()
+void Music_PlayFullTrack()
 {
-    // 设置定时器初值
-    TL1 = Timer1h;
-    TH1 = Timer1l;
-    TR1 = 1;
-    Delay(duration);
-}
-
-void Music_play()
-{
-    // 获取音符和时值
-    if (!currentMusic) 
+    if (!currentMusic)
     {
         Music_Stop();
         return;
     }
 
-    // 检查终止标志
-    if (currentMusic[noteIndex] == 0xFF) 
+    while (1)
     {
-        Music_Stop();
-        return;
-    }
+        // 检查终止标志
+        if (currentMusic[noteIndex] == 0xFF)
+        {
+            Music_Stop();
+            return;
+        }
 
-    FreqSelect = currentMusic[noteIndex];
-    noteIndex++;
-    duration = SPEED  * currentMusic[noteIndex] / 4;
-    noteIndex = noteIndex + 2;
-    Timer1h = FreqTable[FreqSelect] / 256;
-    Timer1l = FreqTable[FreqSelect] % 256;
-    note_Play();
+        // 播放当前音符
+        FreqSelect = currentMusic[noteIndex];
+        noteIndex++;
+        duration = SPEED * currentMusic[noteIndex] / 4;
+        noteIndex++;
+        Timer1h = FreqTable[FreqSelect] / 256;
+        Timer1l = FreqTable[FreqSelect] % 256;
+
+        TR1 = 1;
+        Delay(duration);
+        TR1 = 0;
+
+        // 短暂停顿防止音符粘连
+        Delay(10);
+    }
 }
 
 void Music_Stop(void) 

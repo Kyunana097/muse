@@ -1,77 +1,214 @@
-C51 COMPILER V9.60.0.0   NOTE                                                              04/24/2025 22:21:35 PAGE 1   
+C51 COMPILER V9.60.0.0   NOTE                                                              04/29/2025 11:26:35 PAGE 1   
 
 
 C51 COMPILER V9.60.0.0, COMPILATION OF MODULE NOTE
 OBJECT MODULE PLACED IN .\Objects\note.obj
-COMPILER INVOKED BY: D:\keil5\C51\BIN\C51.EXE sources\note.c OPTIMIZE(8,SPEED) BROWSE INCDIR(.\Headers;.\sources) DEBUG 
-                    -OBJECTEXTEND PRINT(.\Listings\note.lst) TABS(2) OBJECT(.\Objects\note.obj)
+COMPILER INVOKED BY: D:\keil\C51\BIN\C51.EXE sources\note.c LARGE OPTIMIZE(8,SPEED) BROWSE INCDIR(.\Headers;.\sources) D
+                    -EBUG OBJECTEXTEND PRINT(.\Listings\note.lst) OBJECT(.\Objects\note.obj)
 
 line level    source
 
-   1          #include "Headers/oledfont.h"
-   2          #include "Headers/note.h"
-   3          #include <REGX52.H>
-   4          #include "Headers/oled.h"
-   5          
-   6          
-   7          typedef struct NoteNode {
-   8            unsigned char x;      // 当前X坐标
-   9            unsigned char y;      // Y坐标(轨道)
-  10            unsigned char speed;  // 移动速度
-  11            struct NoteNode* next; // 指向下一个音符节点
-  12          } NoteNode;
-  13          
-  14          NoteNode* CreateNoteNode(unsigned char track, unsigned char speed) {
-  15   1          NoteNode* newNote = (NoteNode*)malloc(sizeof(NoteNode));
-*** WARNING C206 IN LINE 15 OF sources\note.c: 'malloc': missing function-prototype
-*** ERROR C267 IN LINE 15 OF sources\note.c: 'malloc': requires ANSI-style prototype
-  16   1          if (newNote == NULL) {
-*** ERROR C202 IN LINE 16 OF sources\note.c: 'NULL': undefined identifier
-  17   2              // 内存不足处理
-  18   2              return NULL;
-*** ERROR C202 IN LINE 18 OF sources\note.c: 'NULL': undefined identifier
-  19   2          }
+   1          #include "note.h"
+   2          #include "oled.h"
+   3          
+   4          /* 全局变量声明 */
+   5           static unsigned char xdata x_position[2][MAX_NOTES_PER_TRACK]; // 使用xdata扩展内存
+   6           static unsigned char data is_active[2] = { 0 }; // 使用内部RAM存储活动状态
+   7           unsigned char data note_count[2] = { 0 }; // 使用内部RAM
+   8           unsigned char data hit_result_counts[4] = { 0 }; // 判定结果统计数组
+   9           unsigned char combo = 0;
+  10          
+  11          /* 音符位置更新函数 */
+  12          void update_note_positions(unsigned char speed)
+  13          {
+  14   1          /* 变量声明必须在函数开头 */
+  15   1          unsigned char track_idx;          // 当前处理的轨道索引
+  16   1          unsigned char note_idx;           // 当前处理的音符索引
+  17   1          unsigned char active_notes;       // 当前轨道中激活的音符状态（位字段）
+  18   1          unsigned char count;              // 当前轨道中音符的数量
+  19   1          unsigned char* pos;               // 指向当前音符位置的指针
   20   1      
-  21   1          newNote->x = 119;  // 从右侧开始
-  22   1          newNote->y = track * 3 ;  // 轨道1=1, 轨道2=4
-  23   1          newNote->speed = speed;
-  24   1          newNote->next = NULL;
-*** ERROR C202 IN LINE 24 OF sources\note.c: 'NULL': undefined identifier
-  25   1          return newNote;
-  26   1      }
-  27          
-  28          void AddNoteToHead(NoteNode** head, NoteNode* newNote) {
-  29   1          if (newNote == NULL) return;
-*** ERROR C202 IN LINE 29 OF sources\note.c: 'NULL': undefined identifier
-  30   1      
-  31   1          newNote->next = *head;
-  32   1          *head = newNote;
-  33   1      }
-  34          
-  35          void RemoveNote(NoteNode** head, NoteNode* noteToRemove) {
-  36   1          if (*head == NULL || noteToRemove == NULL) return;
-*** ERROR C202 IN LINE 36 OF sources\note.c: 'NULL': undefined identifier
-  37   1      
-  38   1          // 如果要删除的是头节点
-  39   1          if (*head == noteToRemove) {
-  40   2              *head = noteToRemove->next;
-  41   2              free(noteToRemove);
-  42   2              return;
-  43   2          }
-  44   1      
-  45   1          // 查找要删除的节点
-  46   1          NoteNode* current = *head;
-  47   1          while (current->next != NULL && current->next != noteToRemove) {
-C51 COMPILER V9.60.0.0   NOTE                                                              04/24/2025 22:21:35 PAGE 2   
+  21   1          // 遍历两个轨道
+  22   1          for (track_idx = 0; track_idx < 2; track_idx++)
+  23   1          {
+  24   2              active_notes = is_active[track_idx];  // 获取当前轨道的激活状态
+  25   2              count = note_count[track_idx];        // 获取当前轨道的音符数量
+  26   2      
+  27   2              // 遍历当前轨道中的所有音符
+  28   2              for (note_idx = 0; note_idx < count; note_idx++)
+  29   2              {
+  30   3                  // 检查当前音符是否激活
+  31   3                  if (active_notes & (1 << note_idx))
+  32   3                  {
+  33   4                      pos = &x_position[track_idx][note_idx];  // 获取当前音符的位置指针
+  34   4                      // 在 OLED 上清除当前音符的位置
+  35   4                      OLED_ShowString(x_position[track_idx][note_idx], (track_idx == 0) ? 0 : 3, " ", 16);
+  36   4                      
+  37   4                      // 先检查音符下一步是否超出屏幕范围（假设屏幕宽度为 128 像素）
+  38   4                      if (*pos <= speed)
+  39   4                      {
+  40   5                          // 如果音符超出屏幕范围，标记为非激活
+  41   5                          active_notes &= ~(1 << note_idx);
+  42   5                          combo = 0;  // 重置连击数
+  43   5                          hit_result_counts[0]++;  // 增加 MISS 的计数
+  44   5                      }
+  45   4                      else
+  46   4                      {
+  47   5                          // 否则更新音符的位置
+  48   5                          *pos -= speed;
+  49   5                          // 在 OLED 上显示更新后的音符位置
+  50   5                          OLED_ShowString(x_position[track_idx][note_idx], (track_idx == 0) ? 0 : 3, "Q", 16);
+  51   5                      }
+  52   4                      
+  53   4      
+  54   4                      
+C51 COMPILER V9.60.0.0   NOTE                                                              04/29/2025 11:26:35 PAGE 2   
 
-  48   2              current = current->next;
-  49   2          }
-  50   1      
-  51   1          // 如果找到节点，删除它
-  52   1          if (current->next == noteToRemove) {
-  53   2              current->next = noteToRemove->next;
-  54   2              free(noteToRemove);
-  55   2          }
-  56   1      }
+  55   4                  }
+  56   3              }
+  57   2              // 更新当前轨道的激活状态
+  58   2              is_active[track_idx] = active_notes;
+  59   2          }
+  60   1      
+  61   1          /* 延迟减少计数 */
+  62   1          // 遍历两个轨道，清理非激活的音符计数
+  63   1          for (track_idx = 0; track_idx < 2; track_idx++)
+  64   1          {
+  65   2              // 如果当前轨道的音符数量大于 0，并且最后一个音符未激活，则减少音符计数
+  66   2              while (note_count[track_idx] > 0 &&
+  67   2                  !(is_active[track_idx] & (1 << (note_count[track_idx] - 1))))
+  68   2              {
+  69   3                  note_count[track_idx]--;  // 减少音符计数
+  70   3              }
+  71   2          }
+  72   1      }
+  73          
+  74          
+  75          /* 音符生成函数 */
+  76          void note_spawn(unsigned char speed, const unsigned char code* track)
+  77          {
+  78   1          /* 变量声明必须在函数开头 */
+  79   1          static unsigned char track_idx = 0; // 静态变量，用于记录当前处理的音符索引
+  80   1          unsigned char note_track;
+  81   1          unsigned char idx;
+  82   1      
+  83   1          // 检查是否还有音符需要生成
+  84   1          if (track[track_idx] == 0) // 如果遇到终止符（全零），表示音符生成结束
+  85   1          {
+  86   2              return; // 退出函数
+  87   2          }
+  88   1      
+  89   1          // 获取当前音符的轨道编号
+  90   1          note_track = track[track_idx + 2] - 1;
+  91   1      
+  92   1          // 检查轨道是否有效且音符池未满
+  93   1          if (note_track < 2 && note_count[note_track] < MAX_NOTES_PER_TRACK)
+  94   1          {
+  95   2              idx = note_count[note_track]; // 获取当前轨道的音符索引
+  96   2              x_position[note_track][idx] = 121 - speed * 2; // 设置音符的初始位置
+  97   2              is_active[note_track] |= (1 << idx); // 标记为激活状态
+  98   2              note_count[note_track]++; // 增加轨道的音符数量
+  99   2              OLED_ShowString(x_position[note_track][idx], (note_track == 0) ? 0 : 3, "Q", 16); // 显示音符
+ 100   2          }
+ 101   1      
+ 102   1          // 移动到下一个音符定义
+ 103   1          track_idx += 3;
+ 104   1      }
+ 105          
+ 106          /**
+ 107           * @brief 检查按键是否命中音符（Keil兼容版本）
+ 108           * @param speed 音符移动速度
+ 109           * @param track 音轨编号(1~N)
+ 110           * @return 判定结果(NOTE_MISS表示未命中)
+ 111           */
+ 112          unsigned char check_key_hit(unsigned char speed, unsigned char track)
+ 113          {
+ 114   1          /* 所有变量声明必须在函数开头 */
+ 115   1          unsigned char track_idx;
+ 116   1          unsigned char result;
+C51 COMPILER V9.60.0.0   NOTE                                                              04/29/2025 11:26:35 PAGE 3   
 
-C51 COMPILATION COMPLETE.  1 WARNING(S),  6 ERROR(S)
+ 117   1          unsigned char note_idx;
+ 118   1          unsigned char pos;
+ 119   1          unsigned char hit_time;
+ 120   1      
+ 121   1          track_idx = track - 1;
+ 122   1          result = NOTE_MISS;
+ 123   1      
+ 124   1          for (note_idx = 0; note_idx < note_count[track_idx]; note_idx++)
+ 125   1          {
+ 126   2              if ((is_active[track_idx] & (1 << note_idx)) &&
+ 127   2                  (x_position[track_idx][note_idx] < 40)) /* 在判定区域内 */
+ 128   2              {
+ 129   3                  pos = x_position[track_idx][note_idx];
+ 130   3                  hit_time = (pos - 16) / speed;
+ 131   3      
+ 132   3                  if (hit_time < 1)
+ 133   3                      result = NOTE_PERFECT;
+ 134   3                  else if (hit_time < 2)
+ 135   3                      result = NOTE_GOOD;
+ 136   3                  else
+ 137   3                      result = NOTE_BAD;
+ 138   3      
+ 139   3                  OLED_ShowString(x_position[track_idx][note_idx],
+ 140   3                      (track_idx == 0) ? 0 : 3, " ", 16);
+ 141   3                  is_active[track_idx] &= ~(1 << note_idx);
+ 142   3                  hit_result_counts[result]++;
+ 143   3                  combo++;
+ 144   3                  return result;
+ 145   3              }
+ 146   2          }
+ 147   1      
+ 148   1          return NOTE_MISS;
+ 149   1      }
+ 150          /**
+ 151           * @brief 检查并立即销毁超时音符（紧急处理版）
+ 152           * @param speed 音符移动速度阈值
+ 153           * @return 1:存在并处理了超时音符 0:无超时音符
+ 154           */
+ 155          unsigned char check_miss_notes(unsigned char speed)
+ 156          {
+ 157   1          /* 所有变量声明必须在函数开头（Keil规范） */
+ 158   1          unsigned char track_idx;
+ 159   1          unsigned char note_idx;
+ 160   1      
+ 161   1          /* 优先检查最紧急的音符（x_position <= speed） */
+ 162   1          for (track_idx = 0; track_idx < 2; track_idx++)
+ 163   1          {
+ 164   2              for (note_idx = 0; note_idx < note_count[track_idx]; note_idx++)
+ 165   2              {
+ 166   3                  if ((is_active[track_idx] & (1 << note_idx)) &&
+ 167   3                      (x_position[track_idx][note_idx] <= speed))
+ 168   3                  {
+ 169   4                      /* 立即清除音符 */
+ 170   4                      OLED_ShowString(x_position[track_idx][note_idx],
+ 171   4                          (track_idx == 0) ? 0 : 3, " ", 16);
+ 172   4                      is_active[track_idx] &= ~(1 << note_idx);
+ 173   4      
+ 174   4                      /* 更新状态 */
+ 175   4                      hit_result_counts[NOTE_MISS]++;
+ 176   4                      combo = 0;
+ 177   4      
+ 178   4                      return 1; // 发现并处理了超时音符
+C51 COMPILER V9.60.0.0   NOTE                                                              04/29/2025 11:26:35 PAGE 4   
+
+ 179   4                  }
+ 180   3              }
+ 181   2          }
+ 182   1      
+ 183   1          return 0; // 无超时音符
+ 184   1      }
+
+
+MODULE INFORMATION:   STATIC OVERLAYABLE
+   CODE SIZE        =   1109    ----
+   CONSTANT SIZE    =      4    ----
+   XDATA SIZE       =     12      15
+   PDATA SIZE       =   ----    ----
+   DATA SIZE        =      8    ----
+   IDATA SIZE       =   ----    ----
+   BIT SIZE         =   ----    ----
+END OF MODULE INFORMATION.
+
+
+C51 COMPILATION COMPLETE.  0 WARNING(S),  0 ERROR(S)
